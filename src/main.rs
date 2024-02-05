@@ -1,18 +1,51 @@
+use bevy::core::FrameCount;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
+use itertools::izip;
+
+const WINDOW_VISIBLE_DELAY: u32 = 3;
 
 const PLAYER_SIZE: Vec2 = Vec2::new(60.0, 30.0);
 const PLAYER_SPEED: f32 = 400.0;
+
+const ALIENS_PER_LINE: usize = 11;
+const SPACE_BETWEEN_ALIENS: Vec2 = Vec2::new(12.0, 16.0);
+const MARGIN: f32 = 80.0;
+
+const ALIEN_SIZE: Vec2 = Vec2::new(40.0, 30.0);
+const YELLOW_ALIEN_SCORE: u32 = 30;
+const GREEN_ALIEN_SCORE: u32 = 20;
+const RED_ALIEN_SCORE: u32 = 10;
+
 const LASER_SIZE: Vec2 = Vec2::new(5.0, 15.0);
-const LASER_SPEED: f32 = 600.0;
+const LASER_SPEED: f32 = 800.0;
+
+fn get_window_resolution() -> Vec2 {
+    let width = 2.0 * MARGIN + ALIENS_PER_LINE as f32 * ALIEN_SIZE.x + (ALIENS_PER_LINE - 1) as f32 * SPACE_BETWEEN_ALIENS.x;
+    let height = 800.0;
+    Vec2::new(width, height)
+}
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                title: "Invaders".into(),
+                resolution: get_window_resolution().into(),
+                enabled_buttons: bevy::window::EnabledButtons {
+                    maximize: false,
+                    ..default()
+                },
+                visible: false,
+                ..default()
+            }),
+            ..default()
+        }))
         .add_systems(
             Startup,
-            (add_resources, spawn_camera, spawn_player, play_main_music),
+            (add_resources, spawn_camera, spawn_player, spawn_aliens),
         )
+        .add_systems(Update, (make_visible, play_main_music).chain())
         .add_systems(FixedUpdate, (move_player, restrict_player_movement).chain())
         .add_systems(FixedUpdate, (move_lasers, despawn_lasers).chain())
         .add_systems(FixedUpdate, player_shoot)
@@ -21,6 +54,16 @@ fn main() {
 
 #[derive(Component)]
 struct Player;
+
+#[derive(Clone, Component)]
+enum Alien {
+    Yellow,
+    Green,
+    Red
+}
+
+#[derive(Resource)]
+struct PlayerScore(u32);
 
 #[derive(PartialEq)]
 enum LaserDirection {
@@ -39,23 +82,35 @@ struct ShootSound(Handle<AudioSource>);
 #[derive(Component)]
 struct MainMusic;
 
+fn make_visible(mut window: Query<&mut Window>, frames: Res<FrameCount>) {
+    if frames.0 == WINDOW_VISIBLE_DELAY {
+        window.single_mut().visible = true;
+    }
+}
+
 fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
     let shoot = asset_server.load("audio/shoot.ogg");
     commands.insert_resource(ShootSound(shoot));
+
+    commands.insert_resource(PlayerScore(0));
 }
 
-fn play_main_music(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let music = asset_server.load("audio/spaceinvaders.ogg");
-    commands.spawn((
-        AudioBundle {
-            source: music,
-            settings: PlaybackSettings::LOOP,
-        },
-        MainMusic,
-    ));
+fn play_main_music(mut commands: Commands, asset_server: Res<AssetServer>, frames: Res<FrameCount>) {
+    if frames.0 == WINDOW_VISIBLE_DELAY {
+        let music = asset_server.load("audio/spaceinvaders.ogg");
+        commands.spawn((
+            AudioBundle {
+                source: music,
+                settings: PlaybackSettings::LOOP,
+            },
+            MainMusic,
+        ));
+    }
 }
 
-fn spawn_camera(mut commands: Commands, window_query: Query<&Window, With<PrimaryWindow>>) {
+fn spawn_camera(mut commands: Commands,
+                window_query: Query<&Window, With<PrimaryWindow>>
+) {
     let window = window_query.get_single().unwrap();
     commands.spawn(Camera2dBundle {
         transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.0),
@@ -68,7 +123,7 @@ fn spawn_player(
     window_query: Query<&Window, With<PrimaryWindow>>,
     asset_server: Res<AssetServer>,
 ) {
-    let window = window_query.get_single().unwrap();
+    let window = window_query.single();
     commands.spawn((
         SpriteBundle {
             texture: asset_server.load("sprites/player.png"),
@@ -79,8 +134,45 @@ fn spawn_player(
     ));
 }
 
+fn spawn_aliens(
+    mut commands: Commands,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    asset_server: Res<AssetServer>,
+) {
+    let window = window_query.single();
+
+    let sprites: [Handle<Image>; 3] = [asset_server.load("sprites/yellow.png"),
+        asset_server.load("sprites/green.png"),
+        asset_server.load("sprites/red.png")];
+    let lines = [1_usize, 2, 2];
+    let mut alien_types = [Alien::Yellow, Alien::Green, Alien::Red];
+
+    let mut direction = Vec3::new(SPACE_BETWEEN_ALIENS.x + ALIEN_SIZE.x, 0.0, 0.0);
+    let mut translation = Vec3::new(MARGIN + ALIEN_SIZE.x / 2.0, window.height() - MARGIN, 0.0);
+
+    for (sprite, lines, alien_type) in izip!(sprites, lines, alien_types) {
+        for i in 0..lines {
+            for j in 0..11 {
+                commands.spawn((
+                    SpriteBundle {
+                        texture: sprite.clone(),
+                        transform: Transform::from_translation(translation),
+                        ..default()
+                    },
+                    alien_type.clone(),
+                ));
+                if j != ALIENS_PER_LINE - 1 {
+                    translation += direction;
+                                    }
+            }
+            direction.x *= -1.0;
+            translation.y -= SPACE_BETWEEN_ALIENS.y + ALIEN_SIZE.y;
+        }
+    }
+}
+
 fn move_player(
-    mut player_query: Query<&mut Transform, With<Player>>,
+    mut player_query: Query<&mut Transform, (With<Player>, Without<Laser>)>,
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
 ) {
@@ -98,10 +190,10 @@ fn move_player(
 }
 
 fn restrict_player_movement(
-    mut player_query: Query<&mut Transform, With<Player>>,
+    mut player_query: Query<&mut Transform, (With<Player>, Without<Laser>)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
-    let window = window_query.get_single().unwrap();
+    let window = window_query.single();
 
     let half_player_width = PLAYER_SIZE.x / 2.0;
     let x_min = half_player_width;
@@ -123,8 +215,10 @@ fn player_shoot(
         .iter()
         .any(|Laser { direction }| *direction == LaserDirection::Up)
     {
+        // A laser shot by the player is still visible.
         return;
     }
+
     if keyboard_input.just_pressed(KeyCode::Space) {
         println!("Shooting!");
         if let Ok(player_transform) = player_query.get_single() {
@@ -151,6 +245,7 @@ fn player_shoot(
                 Laser {
                     direction: LaserDirection::Up,
                 },
+                Player,
             ));
             commands.spawn(AudioBundle {
                 source: shoot_sound.0.clone(),
@@ -175,7 +270,7 @@ fn despawn_lasers(
     lasers_query: Query<(Entity, &Transform), With<Laser>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
-    let window = window_query.get_single().unwrap();
+    let window = window_query.single();
 
     lasers_query.iter().for_each(|(entity, transform)| {
         let y_bottom = transform.translation.y - LASER_SIZE.y / 2.0;
