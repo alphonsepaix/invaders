@@ -2,6 +2,7 @@ use bevy::core::FrameCount;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use itertools::izip;
+use rand::random;
 
 const WINDOW_VISIBLE_DELAY: u32 = 3;
 
@@ -18,7 +19,10 @@ const GREEN_ALIEN_SCORE: u32 = 20;
 const RED_ALIEN_SCORE: u32 = 10;
 
 const LASER_SIZE: Vec2 = Vec2::new(5.0, 15.0);
-const LASER_SPEED: f32 = 800.0;
+const PLAYER_LASER_SPEED: f32 = 800.0;
+const ALIEN_LASER_SPEED: f32 = 400.0;
+const MAX_ALIEN_LASERS: usize = 4;
+const ALIEN_SHOOT_PROB: f32 = 1.0 / 55.0 / 2.0 / 60.0;
 
 fn get_window_resolution() -> Vec2 {
     let width = 2.0 * MARGIN + ALIENS_PER_LINE as f32 * ALIEN_SIZE.x + (ALIENS_PER_LINE - 1) as f32 * SPACE_BETWEEN_ALIENS.x;
@@ -48,18 +52,33 @@ fn main() {
         .add_systems(Update, (make_visible, play_main_music).chain())
         .add_systems(FixedUpdate, (move_player, restrict_player_movement).chain())
         .add_systems(FixedUpdate, (move_lasers, despawn_lasers).chain())
-        .add_systems(FixedUpdate, player_shoot)
+        .add_systems(FixedUpdate, (player_shoot, aliens_shoot, check_for_collisions))
         .run();
 }
 
 #[derive(Component)]
 struct Player;
 
+// #[derive(Component)]
+// struct Alien {
+//     type: AlienType,
+// }
+
 #[derive(Clone, Component)]
 enum Alien {
     Yellow,
     Green,
     Red
+}
+
+impl Alien {
+    fn color(&self) -> Color {
+        match self {
+            Alien::Yellow => Color::YELLOW,
+            Alien::Green => Color::GREEN,
+            Alien::Red => Color::RED,
+        }
+    }
 }
 
 #[derive(Resource)]
@@ -74,10 +93,17 @@ enum LaserDirection {
 #[derive(Component)]
 struct Laser {
     direction: LaserDirection,
+    speed: f32,
 }
 
 #[derive(Resource)]
 struct ShootSound(Handle<AudioSource>);
+
+#[derive(Resource)]
+struct ExplosionSound(Handle<AudioSource>);
+
+#[derive(Resource)]
+struct InvaderKilledSound(Handle<AudioSource>);
 
 #[derive(Component)]
 struct MainMusic;
@@ -91,6 +117,10 @@ fn make_visible(mut window: Query<&mut Window>, frames: Res<FrameCount>) {
 fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
     let shoot = asset_server.load("audio/shoot.ogg");
     commands.insert_resource(ShootSound(shoot));
+    let explosion = asset_server.load("audio/explosion.ogg");
+    commands.insert_resource(ExplosionSound(explosion));
+    let invader_killed = asset_server.load("audio/invaderkilled.ogg");
+    commands.insert_resource(InvaderKilledSound(invader_killed));
 
     commands.insert_resource(PlayerScore(0));
 }
@@ -207,20 +237,17 @@ fn restrict_player_movement(
 fn player_shoot(
     mut commands: Commands,
     player_query: Query<&Transform, With<Player>>,
-    lasers_query: Query<&Laser>,
+    laser_query: Query<&Laser, With<Player>>,
     keyboard_input: Res<Input<KeyCode>>,
     shoot_sound: Res<ShootSound>,
 ) {
-    if lasers_query
-        .iter()
-        .any(|Laser { direction }| *direction == LaserDirection::Up)
+    if laser_query.get_single().is_ok()
     {
         // A laser shot by the player is still visible.
         return;
     }
 
     if keyboard_input.just_pressed(KeyCode::Space) {
-        println!("Shooting!");
         if let Ok(player_transform) = player_query.get_single() {
             let translation = player_transform.translation;
             let half_player_height = PLAYER_SIZE.x / 2.0;
@@ -244,6 +271,7 @@ fn player_shoot(
                 },
                 Laser {
                     direction: LaserDirection::Up,
+                    speed: PLAYER_LASER_SPEED,
                 },
                 Player,
             ));
@@ -255,13 +283,58 @@ fn player_shoot(
     }
 }
 
+fn aliens_shoot(
+    mut commands: Commands,
+    aliens_query: Query<(&Transform, &Alien)>,
+    lasers_query: Query<&Laser, With<Alien>>,
+) {
+    let mut laser_count = lasers_query.iter().count();
+
+    for (alien_transform, alien_type) in aliens_query.iter() {
+        if laser_count == MAX_ALIEN_LASERS {
+            break;
+        }
+
+        if random::<f32>() < ALIEN_SHOOT_PROB {
+            let translation = alien_transform.translation;
+            let half_alien_height = ALIEN_SIZE.y / 2.0;
+
+            commands.spawn((
+                SpriteBundle {
+                    sprite: Sprite {
+                        color: alien_type.color(),
+                        ..default()
+                    },
+                    transform: Transform {
+                        translation: Vec3::new(
+                            translation.x,
+                            translation.y - half_alien_height,
+                            0.0,
+                        ),
+                        scale: LASER_SIZE.extend(0.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+                Laser {
+                    direction: LaserDirection::Down,
+                    speed: ALIEN_LASER_SPEED,
+                },
+                alien_type.clone(),
+            ));
+
+            laser_count += 1;
+        }
+    }
+}
+
 fn move_lasers(mut lasers_query: Query<(&mut Transform, &Laser)>, time: Res<Time>) {
-    for (mut transform, Laser { direction }) in lasers_query.iter_mut() {
+    for (mut transform, Laser { direction, speed }) in lasers_query.iter_mut() {
         let movement = match direction {
             LaserDirection::Up => Vec3::new(0.0, 1.0, 0.0),
             LaserDirection::Down => Vec3::new(0.0, -1.0, 0.0),
         };
-        transform.translation += movement * LASER_SPEED * time.delta_seconds();
+        transform.translation += movement * *speed * time.delta_seconds();
     }
 }
 
@@ -279,4 +352,52 @@ fn despawn_lasers(
             commands.entity(entity).despawn();
         }
     })
+}
+
+fn check_for_collisions(
+    mut commands: Commands,
+    player_query: Query<(Entity, &Transform), (With<Player>, Without<Laser>)>,
+    aliens_query: Query<(Entity, &Transform), (With<Alien>, Without<Laser>)>,
+    player_laser_query: Query<(Entity, &Transform), (With<Laser>, With<Player>)>,
+    alien_lasers_query: Query<(Entity, &Transform), (With<Laser>, With<Alien>)>,
+    explosion_sound: Res<ExplosionSound>,
+    invader_killed_sound: Res<InvaderKilledSound>,
+) {
+    let half_player_height = PLAYER_SIZE.y / 2.0;
+    let half_alien_height = ALIEN_SIZE.y / 2.0;
+    let half_laser_height = LASER_SIZE.y / 2.0;
+
+    // Check if an alien hit the player.
+    if let Ok((player_entity, player_transform)) = player_query.get_single() {
+        for (laser_entity, laser_transform) in alien_lasers_query.iter() {
+            if player_transform.translation.distance(laser_transform.translation)
+                < half_player_height + half_laser_height {
+                commands.entity(player_entity).despawn();
+                commands.entity(laser_entity).despawn();
+
+                // Play an explosion sound when the player dies.
+                commands.spawn(AudioBundle {
+                    source: explosion_sound.0.clone(),
+                    settings: PlaybackSettings::DESPAWN,
+                });
+            }
+        }
+    }
+
+    // Check if player hit an alien.
+    for ((alien_entity, alien_transform)) in aliens_query.iter() {
+        if let Ok((laser_entity, laser_transform)) = player_laser_query.get_single() {
+            if alien_transform.translation.distance(laser_transform.translation)
+                < half_alien_height + half_laser_height {
+                commands.entity(alien_entity).despawn();
+                commands.entity(laser_entity).despawn();
+
+                // Play an explosion sound when an alien dies.
+                commands.spawn(AudioBundle {
+                    source: invader_killed_sound.0.clone(),
+                    settings: PlaybackSettings::DESPAWN,
+                });
+            }
+        }
+    }
 }
