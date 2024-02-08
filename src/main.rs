@@ -3,7 +3,7 @@
 
 use bevy::core::FrameCount;
 use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
+use bevy::window::{close_on_esc, PrimaryWindow};
 use itertools::izip;
 use rand::random;
 use std::time::Duration;
@@ -48,6 +48,12 @@ fn get_window_resolution() -> Vec2 {
     Vec2::new(width, height)
 }
 
+fn make_visible(mut window: Query<&mut Window>, frames: Res<FrameCount>) {
+    if frames.0 == WINDOW_VISIBLE_DELAY {
+        window.single_mut().visible = true;
+    }
+}
+
 fn get_shelter_size() -> Vec2 {
     SHELTER_SIZE * SHELTER_SCALE_FACTOR
 }
@@ -77,7 +83,12 @@ fn main() {
                 spawn_shelters,
             ),
         )
-        .add_systems(Update, (make_visible, play_main_music).chain())
+        .add_event::<PlayerHit>()
+        .add_event::<AlienHit>()
+        .add_systems(
+            Update,
+            (make_visible, play_main_music, close_on_esc).chain(),
+        )
         .add_systems(FixedUpdate, (move_player, restrict_player_movement).chain())
         .add_systems(FixedUpdate, move_aliens)
         .add_systems(FixedUpdate, (move_lasers, despawn_lasers).chain())
@@ -90,6 +101,8 @@ fn main() {
                 shelter_hit,
                 spawn_ufo,
                 move_ufo,
+                handle_player_hit,
+                handle_alien_hit,
             ),
         )
         .run();
@@ -203,11 +216,17 @@ struct AlienDirection {
     next: EntityDirection,
 }
 
-fn make_visible(mut window: Query<&mut Window>, frames: Res<FrameCount>) {
-    if frames.0 == WINDOW_VISIBLE_DELAY {
-        window.single_mut().visible = true;
-    }
+#[derive(Event)]
+struct PlayerHit;
+
+#[derive(Event)]
+struct AlienHit {
+    alien_type: Alien,
+    id: Entity,
 }
+
+#[derive(Resource)]
+struct LivesRemaining(u32);
 
 fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
     let shoot = asset_server.load("audio/shoot.ogg");
@@ -238,6 +257,8 @@ fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
         previous: EntityDirection::Left,
         next: EntityDirection::Left,
     });
+
+    commands.insert_resource(LivesRemaining(3));
 }
 
 fn play_main_music(
@@ -563,34 +584,27 @@ fn despawn_lasers(
 
 fn check_for_collisions(
     mut commands: Commands,
-    player_query: Query<(Entity, &Transform), (With<Player>, Without<Laser>)>,
+    mut alien_hit_event_writer: EventWriter<AlienHit>,
+    mut player_hit_event_writer: EventWriter<PlayerHit>,
+    player_query: Query<&Transform, (With<Player>, Without<Laser>)>,
     aliens_query: Query<(Entity, &Transform, &Alien), Without<Laser>>,
     player_laser_query: Query<(Entity, &Transform), (With<Laser>, With<Player>)>,
     alien_lasers_query: Query<(Entity, &Transform), (With<Laser>, With<Alien>)>,
-    explosion_sound: Res<ExplosionSound>,
-    invader_killed_sound: Res<InvaderKilledSound>,
-    mut score: ResMut<PlayerScore>,
 ) {
     let half_player_height = PLAYER_SIZE.y / 2.0;
     let half_alien_height = ALIEN_SIZE.y / 2.0;
     let half_laser_height = LASER_SIZE.y / 2.0;
 
     // Check if an alien hit the player.
-    if let Ok((player_entity, player_transform)) = player_query.get_single() {
+    if let Ok(player_transform) = player_query.get_single() {
         for (laser_entity, laser_transform) in alien_lasers_query.iter() {
             if player_transform
                 .translation
                 .distance(laser_transform.translation)
                 < half_player_height + half_laser_height
             {
-                commands.entity(player_entity).despawn();
                 commands.entity(laser_entity).despawn();
-
-                // Play an explosion sound when the player dies.
-                commands.spawn(AudioBundle {
-                    source: explosion_sound.0.clone(),
-                    settings: PlaybackSettings::DESPAWN,
-                });
+                player_hit_event_writer.send(PlayerHit);
             }
         }
     }
@@ -603,17 +617,11 @@ fn check_for_collisions(
                 .distance(laser_transform.translation)
                 < half_alien_height + half_laser_height
             {
-                commands.entity(alien_entity).despawn_recursive();
                 commands.entity(laser_entity).despawn();
-
-                // Play an explosion sound when an alien dies.
-                commands.spawn(AudioBundle {
-                    source: invader_killed_sound.0.clone(),
-                    settings: PlaybackSettings::ONCE,
+                alien_hit_event_writer.send(AlienHit {
+                    alien_type: alien_type.clone(),
+                    id: alien_entity,
                 });
-
-                score.0 += alien_type.value();
-                println!("Score: {}", score.0);
             }
         }
     }
@@ -713,5 +721,62 @@ fn move_ufo(
         if x >= window.width() + UFO_SIZE.x + margin || x <= -(UFO_SIZE.x + margin) {
             commands.entity(ufo_entity).despawn_recursive();
         }
+    }
+}
+
+fn handle_player_hit(
+    mut commands: Commands,
+    mut player_hit_event_reader: EventReader<PlayerHit>,
+    player_query: Query<Entity, With<Player>>,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+    asset_server: Res<AssetServer>,
+    explosion_sound: Res<ExplosionSound>,
+    mut lives_remaining: ResMut<LivesRemaining>,
+) {
+    if player_hit_event_reader.read().next().is_some() {
+        if let Ok(player_entity) = player_query.get_single() {
+            commands.entity(player_entity).despawn();
+
+            // Play an explosion sound when the player dies.
+            commands.spawn(AudioBundle {
+                source: explosion_sound.0.clone(),
+                settings: PlaybackSettings::DESPAWN,
+            });
+
+            // Decrease the number of lives remaining.
+            lives_remaining.0 = lives_remaining.0.saturating_sub(1);
+            println!("Lives remaining: {}", lives_remaining.0);
+
+            if lives_remaining.0 > 0 {
+                // Respawn the player.
+                spawn_player(commands, window_query, asset_server);
+            } else {
+                // Game over.
+                println!("Game over!");
+            }
+        }
+    }
+}
+
+fn handle_alien_hit(
+    mut commands: Commands,
+    mut alien_hit_event_reader: EventReader<AlienHit>,
+    invader_killed_sound: Res<InvaderKilledSound>,
+    mut score: ResMut<PlayerScore>,
+) {
+    if let Some(AlienHit { alien_type, id }) = alien_hit_event_reader.read().next() {
+        // A mystery ship has a sound bundled with it, so we need to stop it
+        // when it gets hit with a recursive despawn.
+        commands.entity(*id).despawn_recursive();
+
+        // Play an explosion sound when an alien dies.
+        commands.spawn(AudioBundle {
+            source: invader_killed_sound.0.clone(),
+            settings: PlaybackSettings::ONCE,
+        });
+
+        // Increase the player score.
+        score.0 += alien_type.value();
+        println!("Score: {}", score.0);
     }
 }
