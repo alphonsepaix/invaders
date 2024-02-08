@@ -1,37 +1,42 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::too_many_arguments)]
+
 use bevy::core::FrameCount;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use itertools::izip;
 use rand::random;
+use std::time::Duration;
 
 const WINDOW_VISIBLE_DELAY: u32 = 3;
 
 const PLAYER_SIZE: Vec2 = Vec2::new(60.0, 30.0);
-const PLAYER_SPEED: f32 = 400.0;
+const PLAYER_SPEED: f32 = 300.0;
 
 const NUM_SHELTERS: usize = 4;
-const SHELTER_SIZE: Vec2 = Vec2::new(40.0, 20.0); // The size before scale.
+const SHELTER_SIZE: Vec2 = Vec2::new(40.0, 20.0);
+// The size before scale.
 const SHELTER_SCALE_FACTOR: f32 = 2.5;
 
 const ALIENS_PER_LINE: usize = 11;
 const SPACE_BETWEEN_ALIENS: Vec2 = Vec2::new(20.0, 16.0);
 const MARGIN: f32 = 80.0;
-
+const ALIEN_SHOOT_PROB: f32 = 1.0 / 40.0 / 60.0;
 const ALIEN_SIZE: Vec2 = Vec2::new(40.0, 30.0);
 const YELLOW_ALIEN_VALUE: u32 = 30;
 const GREEN_ALIEN_VALUE: u32 = 20;
 const RED_ALIEN_VALUE: u32 = 10;
+const ALIEN_TICK_DURATION: f32 = 0.8;
 
 const UFO_VALUE: u32 = 300;
-const UFO_SPAWN_PROB: f32 = 1.0 / 15.0;
+const UFO_SPAWN_PROB: f32 = 1.0 / 30.0;
 const UFO_SIZE: Vec2 = Vec2::new(80.0, 30.0);
 const UFO_SPEED: f32 = 150.0;
 
 const LASER_SIZE: Vec2 = Vec2::new(5.0, 15.0);
-const PLAYER_LASER_SPEED: f32 = 800.0;
+const PLAYER_LASER_SPEED: f32 = 600.0;
 const ALIEN_LASER_SPEED: f32 = 300.0;
-const MAX_ALIEN_LASERS: usize = 3;
-const ALIEN_SHOOT_PROB: f32 = 1.0 / 55.0 / 60.0;
+const MAX_ALIEN_LASERS: usize = 4;
 
 const HEIGHT_BELOW_PLAYER: f32 = 60.0;
 
@@ -107,7 +112,8 @@ impl Alien {
             Alien::Yellow => Color::YELLOW,
             Alien::Green => Color::GREEN,
             Alien::Red => Color::RED,
-            Alien::Ufo => Color::PURPLE, // Doesn't matter.
+            // Doesn't matter.
+            Alien::Ufo => Color::PURPLE,
         }
     }
 
@@ -222,7 +228,10 @@ fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     commands.insert_resource(PlayerScore(0));
 
-    commands.insert_resource(AlienTimer(Timer::from_seconds(0.8, TimerMode::Repeating)));
+    commands.insert_resource(AlienTimer(Timer::from_seconds(
+        ALIEN_TICK_DURATION,
+        TimerMode::Repeating,
+    )));
     commands.insert_resource(UfoTimer(Timer::from_seconds(1.0, TimerMode::Repeating)));
 
     commands.insert_resource(AlienDirection {
@@ -399,11 +408,6 @@ fn move_aliens(
             transform.translation += translation;
         });
 
-        commands.spawn(AudioBundle {
-            source: sounds.get(),
-            settings: PlaybackSettings::DESPAWN,
-        });
-
         if let EntityDirection::Down = alien_direction.next {
             // If aliens were moving down we change their direction before the next call.
             alien_direction.next = match alien_direction.previous {
@@ -412,7 +416,6 @@ fn move_aliens(
                 _ => panic!("Previous alien direction should be either left or right."),
             };
             alien_direction.previous = alien_direction.next.clone();
-            return;
         } else {
             // Check if an alien hit a side.
             let resolution = get_window_resolution();
@@ -423,6 +426,16 @@ fn move_aliens(
                 x <= half_alien_width || x >= resolution.x - half_alien_width
             }) {
                 alien_direction.next = EntityDirection::Down;
+
+                // Decrease the duration of the timer to make aliens move faster.
+                let current_tick = timer.duration().as_secs_f32();
+                timer.set_duration(Duration::from_secs_f32(current_tick / 1.1));
+
+                // Play the sound of the aliens moving.
+                commands.spawn(AudioBundle {
+                    source: sounds.get(),
+                    settings: PlaybackSettings::DESPAWN,
+                });
             }
         }
     }
@@ -619,9 +632,9 @@ fn shelter_hit(
                 <= get_shelter_size().x / 2.0 + LASER_SIZE.x / 2.0
             {
                 commands.entity(laser_entity).despawn();
-                shelter.armor -= 5;
+                shelter.armor = shelter.armor.saturating_sub(5);
             }
-            if shelter.armor <= 0 {
+            if shelter.armor == 0 {
                 commands.entity(shelter_entity).despawn();
             }
         }
