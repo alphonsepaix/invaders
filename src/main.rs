@@ -30,7 +30,7 @@ const ALIEN_TICK_DURATION: f32 = 0.8;
 
 const UFO_VALUE: u32 = 300;
 const UFO_SPAWN_PROB: f32 = 1.0 / 30.0;
-const UFO_SIZE: Vec2 = Vec2::new(80.0, 30.0);
+const UFO_SIZE: Vec2 = Vec2::new(82.0, 36.0);
 const UFO_SPEED: f32 = 150.0;
 
 const LASER_SIZE: Vec2 = Vec2::new(5.0, 15.0);
@@ -87,7 +87,7 @@ fn main() {
         .add_event::<AlienHit>()
         .add_systems(
             Update,
-            (make_visible, play_main_music, close_on_esc).chain(),
+            (make_visible, /* play_main_music, */ close_on_esc).chain(),
         )
         .add_systems(FixedUpdate, (move_player, restrict_player_movement).chain())
         .add_systems(FixedUpdate, move_aliens)
@@ -261,6 +261,7 @@ fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(LivesRemaining(3));
 }
 
+#[allow(dead_code)]
 fn play_main_music(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -429,6 +430,14 @@ fn move_aliens(
             transform.translation += translation;
         });
 
+        // Play the sound of the aliens moving, if any.
+        if aliens_query.iter().count() > 0 {
+            commands.spawn(AudioBundle {
+                source: sounds.get(),
+                settings: PlaybackSettings::ONCE,
+            });
+        }
+
         if let EntityDirection::Down = alien_direction.next {
             // If aliens were moving down we change their direction before the next call.
             alien_direction.next = match alien_direction.previous {
@@ -451,12 +460,6 @@ fn move_aliens(
                 // Decrease the duration of the timer to make aliens move faster.
                 let current_tick = timer.duration().as_secs_f32();
                 timer.set_duration(Duration::from_secs_f32(current_tick / 1.1));
-
-                // Play the sound of the aliens moving.
-                commands.spawn(AudioBundle {
-                    source: sounds.get(),
-                    settings: PlaybackSettings::DESPAWN,
-                });
             }
         }
     }
@@ -474,7 +477,7 @@ fn player_shoot(
         return;
     }
 
-    if keyboard_input.just_pressed(KeyCode::Space) {
+    if keyboard_input.pressed(KeyCode::Space) {
         if let Ok(player_transform) = player_query.get_single() {
             let translation = player_transform.translation;
             let half_player_height = PLAYER_SIZE.x / 2.0;
@@ -683,10 +686,9 @@ fn spawn_ufo(
             commands
                 .spawn((
                     SpriteBundle {
-                        texture: asset_server.load("sprites/red.png"),
+                        texture: asset_server.load("sprites/ufo.png"),
                         transform: Transform {
                             translation: spawn_position,
-                            scale: Vec3::new(2.0, 1.0, 0.0),
                             ..default()
                         },
                         ..default()
@@ -727,7 +729,7 @@ fn move_ufo(
 fn handle_player_hit(
     mut commands: Commands,
     mut player_hit_event_reader: EventReader<PlayerHit>,
-    player_query: Query<Entity, With<Player>>,
+    player_query: Query<Entity, (With<Player>, Without<Laser>)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     asset_server: Res<AssetServer>,
     explosion_sound: Res<ExplosionSound>,
@@ -761,7 +763,9 @@ fn handle_player_hit(
 fn handle_alien_hit(
     mut commands: Commands,
     mut alien_hit_event_reader: EventReader<AlienHit>,
+    aliens_query: Query<&Alien, Without<Laser>>,
     invader_killed_sound: Res<InvaderKilledSound>,
+    mut alien_timer: ResMut<AlienTimer>,
     mut score: ResMut<PlayerScore>,
 ) {
     if let Some(AlienHit { alien_type, id }) = alien_hit_event_reader.read().next() {
@@ -778,5 +782,13 @@ fn handle_alien_hit(
         // Increase the player score.
         score.0 += alien_type.value();
         println!("Score: {}", score.0);
+
+        // If there are less than 25 aliens remaining, increase their speed everyone
+        // one of them is killed.
+        if aliens_query.iter().count() < 25 {
+            let current_duration = alien_timer.duration();
+            let next_duration = current_duration.as_secs_f32() * 0.95;
+            alien_timer.set_duration(Duration::from_secs_f32(next_duration));
+        }
     }
 }
