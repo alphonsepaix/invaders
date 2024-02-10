@@ -776,7 +776,7 @@ fn handle_alien_hit(
         // Play an explosion sound when an alien dies.
         commands.spawn(AudioBundle {
             source: invader_killed_sound.0.clone(),
-            settings: PlaybackSettings::ONCE,
+            settings: PlaybackSettings::DESPAWN,
         });
 
         // Increase the player score.
