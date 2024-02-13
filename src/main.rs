@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy::window::close_on_esc;
-use invaders::game::events::*;
 use invaders::game::systems::*;
+use invaders::game::*;
 use invaders::*;
 
 fn main() {
@@ -19,37 +19,11 @@ fn main() {
             }),
             ..default()
         }))
-        .add_systems(
-            Startup,
-            (
-                add_resources,
-                spawn_camera,
-                spawn_player,
-                spawn_aliens,
-                spawn_shelters,
-            ),
-        )
-        .add_event::<PlayerHit>()
-        .add_event::<AlienHit>()
-        .add_systems(
-            Update,
-            (make_visible, /* play_main_music, */ close_on_esc).chain(),
-        )
-        .add_systems(FixedUpdate, (move_player, restrict_player_movement).chain())
-        .add_systems(FixedUpdate, move_aliens)
-        .add_systems(FixedUpdate, (move_lasers, despawn_lasers).chain())
-        .add_systems(
-            FixedUpdate,
-            (
-                player_shoot,
-                aliens_shoot,
-                check_for_collisions,
-                shelter_hit,
-                spawn_ufo,
-                move_ufo,
-                handle_player_hit,
-                handle_alien_hit,
-            ),
-        )
+        .add_systems(Update, (make_visible, close_on_esc).chain())
+        .add_plugins(WorldPlugin)
+        .add_plugins(PlayerPlugin)
+        .add_plugins(AliensPlugin)
+        .add_plugins(LasersPlugin)
+        .add_plugins(GamePlugin)
         .run();
 }

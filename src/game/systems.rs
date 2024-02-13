@@ -60,10 +60,10 @@ pub fn play_main_music(
 ) {
     if frames.0 == WINDOW_VISIBLE_DELAY {
         let music = asset_server.load("audio/spaceinvaders.ogg");
-        commands.spawn((AudioBundle {
+        commands.spawn(AudioBundle {
             source: music,
             settings: PlaybackSettings::LOOP,
-        },));
+        });
     }
 }
 
