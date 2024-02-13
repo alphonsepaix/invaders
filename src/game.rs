@@ -67,6 +67,12 @@ impl Plugin for GamePlugin {
         )
         .add_systems(OnEnter(GameState::Pause), pause_setup)
         .add_systems(OnExit(GameState::Pause), despawn_screen::<OnPauseScreen>)
+        .add_systems(OnEnter(GameState::Transition), reset_transition_timer)
+        .add_systems(
+            Update,
+            transition_countdown.run_if(in_state(GameState::Transition)),
+        )
+        .add_systems(OnExit(GameState::Transition), spawn_player)
         .add_systems(
             OnExit(AppState::InGame),
             (despawn_screen::<OnGameScreen>, reset_game_state),

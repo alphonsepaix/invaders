@@ -27,6 +27,9 @@ pub struct ButtonPressedSound(pub Handle<AudioSource>);
 #[derive(Resource)]
 pub struct AlreadyPlayed(pub bool);
 
+#[derive(Deref, DerefMut, Resource)]
+pub struct TransitionTimer(pub Timer);
+
 #[derive(Resource)]
 pub struct PlayerScore(pub u32);
 

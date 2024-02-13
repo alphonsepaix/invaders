@@ -27,6 +27,11 @@ pub fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     commands.insert_resource(AlreadyPlayed(false));
 
+    commands.insert_resource(TransitionTimer(Timer::new(
+        Duration::from_secs(1),
+        TimerMode::Repeating,
+    )));
+
     let shoot = asset_server.load("audio/shoot.ogg");
     commands.insert_resource(ShootSound(shoot));
     let explosion = asset_server.load("audio/explosion.ogg");
@@ -543,10 +548,9 @@ pub fn handle_player_hit(
     mut player_hit_event_reader: EventReader<PlayerHit>,
     mut game_over_event_writer: EventWriter<GameOver>,
     player_query: Query<Entity, (With<Player>, Without<Laser>)>,
-    window_query: Query<&Window, With<PrimaryWindow>>,
-    asset_server: Res<AssetServer>,
     explosion_sound: Res<ExplosionSound>,
     mut lives_remaining: ResMut<LivesRemaining>,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
     if player_hit_event_reader.read().next().is_some() {
         if let Ok(player_entity) = player_query.get_single() {
@@ -563,8 +567,7 @@ pub fn handle_player_hit(
             println!("Lives remaining: {}", lives_remaining.0);
 
             if lives_remaining.0 > 0 {
-                // Respawn the player.
-                spawn_player(commands, window_query, asset_server);
+                next_state.set(GameState::Transition);
             } else {
                 // Game over.
                 game_over_event_writer.send(GameOver);
@@ -644,5 +647,19 @@ pub fn handle_input(
     }
     if keyboard_input.just_pressed(KeyCode::Q) {
         app_exit_event_writer.send(AppExit);
+    }
+}
+
+pub fn reset_transition_timer(mut timer: ResMut<TransitionTimer>) {
+    timer.reset();
+}
+
+pub fn transition_countdown(
+    mut game_state: ResMut<NextState<GameState>>,
+    time: Res<Time>,
+    mut timer: ResMut<TransitionTimer>,
+) {
+    if timer.tick(time.delta()).finished() {
+        game_state.set(GameState::Running);
     }
 }
