@@ -84,7 +84,7 @@ pub fn spawn_player(
     commands.spawn((
         SpriteBundle {
             texture: asset_server.load("sprites/player.png"),
-            transform: Transform::from_xyz(window.width() / 2.0, HEIGHT_BELOW_PLAYER, 0.0),
+            transform: Transform::from_xyz(window.width() / 2.0, FLOOR_HEIGHT, 0.0),
             ..default()
         },
         Player,
@@ -142,7 +142,7 @@ pub fn spawn_shelters(
     let shelter_size = get_shelter_size();
     let space_between_shelters =
         (window.width() - NUM_SHELTERS as f32 * shelter_size.x) / (NUM_SHELTERS + 1) as f32;
-    let height_below_shelter = 2.0 * HEIGHT_BELOW_PLAYER + PLAYER_SIZE.y;
+    let height_below_shelter = 2.0 * FLOOR_HEIGHT + PLAYER_SIZE.y;
     let mut translation = Vec3::new(
         space_between_shelters + shelter_size.x / 2.0,
         height_below_shelter,
@@ -517,6 +517,7 @@ pub fn move_ufo(
 pub fn handle_player_hit(
     mut commands: Commands,
     mut player_hit_event_reader: EventReader<PlayerHit>,
+    mut game_over_event_writer: EventWriter<GameOver>,
     player_query: Query<Entity, (With<Player>, Without<Laser>)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     asset_server: Res<AssetServer>,
@@ -542,7 +543,7 @@ pub fn handle_player_hit(
                 spawn_player(commands, window_query, asset_server);
             } else {
                 // Game over.
-                println!("Game over!");
+                game_over_event_writer.send(GameOver);
             }
         }
     }
@@ -578,5 +579,22 @@ pub fn handle_alien_hit(
             let next_duration = current_duration.as_secs_f32() * 0.95;
             alien_timer.set_duration(Duration::from_secs_f32(next_duration));
         }
+    }
+}
+
+pub fn alien_reach_floor(
+    mut game_over_event_writer: EventWriter<GameOver>,
+    aliens_query: Query<&Transform, (With<Alien>, Without<Laser>)>,
+) {
+    for alien_transform in aliens_query.iter() {
+        if alien_transform.translation.y < FLOOR_HEIGHT {
+            game_over_event_writer.send(GameOver);
+        }
+    }
+}
+
+pub fn handle_game_over(mut game_over_event_reader: EventReader<GameOver>) {
+    if game_over_event_reader.read().next().is_some() {
+        println!("Game over!");
     }
 }

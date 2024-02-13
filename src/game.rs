@@ -28,7 +28,7 @@ impl Plugin for PlayerPlugin {
 impl Plugin for AliensPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_aliens)
-            .add_systems(FixedUpdate, move_aliens)
+            .add_systems(FixedUpdate, (move_aliens, alien_reach_floor).chain())
             .add_event::<AlienHit>();
     }
 }
@@ -46,8 +46,10 @@ impl Plugin for GamePlugin {
                 move_ufo,
                 handle_player_hit,
                 handle_alien_hit,
+                handle_game_over,
             ),
-        );
+        )
+        .add_event::<GameOver>();
     }
 }
 

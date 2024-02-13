@@ -9,3 +9,6 @@ pub struct AlienHit {
     pub alien_type: Alien,
     pub id: Entity,
 }
+
+#[derive(Event)]
+pub struct GameOver;

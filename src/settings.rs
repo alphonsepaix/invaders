@@ -29,4 +29,4 @@ pub const PLAYER_LASER_SPEED: f32 = 600.0;
 pub const ALIEN_LASER_SPEED: f32 = 300.0;
 pub const MAX_ALIEN_LASERS: usize = 4;
 
-pub const HEIGHT_BELOW_PLAYER: f32 = 60.0;
+pub const FLOOR_HEIGHT: f32 = 60.0;
