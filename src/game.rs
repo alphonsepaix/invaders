@@ -1,42 +1,51 @@
-use bevy::prelude::*;
-use events::*;
-use systems::*;
-
 pub mod components;
 pub mod events;
 pub mod resources;
 pub mod systems;
 pub mod ui;
 
-pub struct PlayerPlugin;
-
-pub struct AliensPlugin;
+use bevy::prelude::*;
+use components::*;
+use events::*;
+use systems::*;
+use ui::*;
 
 pub struct GamePlugin;
-
-pub struct WorldPlugin;
-
-pub struct LasersPlugin;
-
-impl Plugin for PlayerPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_player)
-            .add_systems(FixedUpdate, (move_player, restrict_player_movement).chain())
-            .add_event::<PlayerHit>();
-    }
-}
-
-impl Plugin for AliensPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_aliens)
-            .add_systems(FixedUpdate, (move_aliens, alien_reach_floor).chain())
-            .add_event::<AlienHit>();
-    }
-}
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
+            OnEnter(AppState::InGame),
+            (
+                spawn_player,
+                spawn_shelters,
+                spawn_aliens,
+                play_main_music,
+                add_resources,
+            ),
+        )
+        .add_event::<PlayerHit>()
+        .add_event::<AlienHit>()
+        .add_event::<GameOver>()
+        .add_systems(
+            FixedUpdate,
+            (move_player, restrict_player_movement)
+                .chain()
+                .run_if(in_state(AppState::InGame)),
+        )
+        .add_systems(
+            FixedUpdate,
+            (move_aliens, alien_reach_floor)
+                .chain()
+                .run_if(in_state(AppState::InGame)),
+        )
+        .add_systems(
+            FixedUpdate,
+            (move_lasers, despawn_lasers)
+                .chain()
+                .run_if(in_state(AppState::InGame)),
+        )
+        .add_systems(
             FixedUpdate,
             (
                 player_shoot,
@@ -48,21 +57,12 @@ impl Plugin for GamePlugin {
                 handle_player_hit,
                 handle_alien_hit,
                 handle_game_over,
-            ),
+            )
+                .run_if(in_state(AppState::InGame)),
         )
-        .add_event::<GameOver>();
-    }
-}
-
-impl Plugin for WorldPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (add_resources, spawn_camera, spawn_shelters))
-            .add_systems(Update, play_main_music);
-    }
-}
-
-impl Plugin for LasersPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(FixedUpdate, (move_lasers, despawn_lasers).chain());
+        .add_systems(
+            OnExit(AppState::InGame),
+            (despawn_screen::<OnGameScreen>, reset_game_state),
+        );
     }
 }

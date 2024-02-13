@@ -4,6 +4,7 @@
 use crate::game::components::*;
 use crate::game::events::*;
 use crate::game::resources::*;
+use crate::game::ui::*;
 use crate::settings::*;
 use crate::*;
 use bevy::core::FrameCount;
@@ -93,6 +94,7 @@ pub fn spawn_player(
             ..default()
         },
         Player,
+        OnGameScreen,
     ));
 }
 
@@ -124,6 +126,7 @@ pub fn spawn_aliens(
                         ..default()
                     },
                     alien_type.clone(),
+                    OnGameScreen,
                 ));
                 if j != ALIENS_PER_LINE - 1 {
                     translation += direction;
@@ -166,6 +169,7 @@ pub fn spawn_shelters(
                 ..default()
             },
             Shelter { armor: 100 },
+            OnGameScreen,
         ));
 
         translation.x += space_between_shelters + shelter_size.x;
@@ -297,6 +301,7 @@ pub fn player_shoot(
                     speed: PLAYER_LASER_SPEED,
                 },
                 Player,
+                OnGameScreen,
             ));
             commands.spawn(AudioBundle {
                 source: shoot_sound.0.clone(),
@@ -344,6 +349,7 @@ pub fn aliens_shoot(
                     speed: ALIEN_LASER_SPEED,
                 },
                 alien_type.clone(),
+                OnGameScreen,
             ));
 
             laser_count += 1;
@@ -488,6 +494,7 @@ pub fn spawn_ufo(
                     },
                     Ufo(direction),
                     Alien::Ufo,
+                    OnGameScreen,
                 ))
                 .with_children(|parent| {
                     parent.spawn(AudioBundle {
@@ -515,6 +522,17 @@ pub fn move_ufo(
         let margin = 10.0;
         if x >= window.width() + UFO_SIZE.x + margin || x <= -(UFO_SIZE.x + margin) {
             commands.entity(ufo_entity).despawn_recursive();
+        }
+    }
+}
+
+pub fn alien_reach_floor(
+    mut game_over_event_writer: EventWriter<GameOver>,
+    aliens_query: Query<&Transform, (With<Alien>, Without<Laser>)>,
+) {
+    for alien_transform in aliens_query.iter() {
+        if alien_transform.translation.y < FLOOR_HEIGHT {
+            game_over_event_writer.send(GameOver);
         }
     }
 }
@@ -577,8 +595,8 @@ pub fn handle_alien_hit(
         score.0 += alien_type.value();
         println!("Score: {}", score.0);
 
-        // If there are less than 25 aliens remaining, increase their speed everyone
-        // one of them is killed.
+        // If there are less than 25 aliens remaining, increase their speed
+        // every time anyone one of them is killed.
         if aliens_query.iter().count() < 25 {
             let current_duration = alien_timer.duration();
             let next_duration = current_duration.as_secs_f32() * 0.95;
@@ -587,19 +605,22 @@ pub fn handle_alien_hit(
     }
 }
 
-pub fn alien_reach_floor(
-    mut game_over_event_writer: EventWriter<GameOver>,
-    aliens_query: Query<&Transform, (With<Alien>, Without<Laser>)>,
+pub fn handle_game_over(
+    mut game_over_event_reader: EventReader<GameOver>,
+    mut next_state: ResMut<NextState<AppState>>,
+    mut already_played: ResMut<AlreadyPlayed>,
 ) {
-    for alien_transform in aliens_query.iter() {
-        if alien_transform.translation.y < FLOOR_HEIGHT {
-            game_over_event_writer.send(GameOver);
-        }
+    if game_over_event_reader.read().next().is_some() {
+        next_state.set(AppState::Menu);
+        already_played.0 = true;
+        println!("Game over!");
     }
 }
 
-pub fn handle_game_over(mut game_over_event_reader: EventReader<GameOver>) {
-    if game_over_event_reader.read().next().is_some() {
-        println!("Game over!");
-    }
+pub fn reset_game_state(
+    mut score: ResMut<PlayerScore>,
+    mut lives_remaining: ResMut<LivesRemaining>,
+) {
+    score.0 = 0;
+    lives_remaining.0 = 3;
 }

@@ -31,9 +31,10 @@ pub const MAX_ALIEN_LASERS: usize = 4;
 
 pub const FLOOR_HEIGHT: f32 = 60.0;
 
+pub const BACKGROUND_COLOR: Color = Color::BLACK;
 pub const SCOREBOARD_FONT_SIZE: f32 = 28.0;
-pub const TEXT_COLOR: Color = Color::rgb(0.0, 0.7, 0.0);
-pub const MENU_TEXT_COLOR: Color = Color::GREEN;
+pub const TEXT_COLOR: Color = Color::YELLOW;
+pub const MENU_TEXT_COLOR: Color = Color::YELLOW;
 pub const RESULTS_TEXT_COLOR: Color = Color::rgb(0.8, 0.8, 0.8);
 pub const TEXT_BUTTON_SIZE: f32 = 40.0;
 pub const BUTTON_WIDTH: f32 = 250.0;

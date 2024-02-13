@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy::window::close_on_esc;
 use invaders::game::systems::*;
+use invaders::game::ui::*;
 use invaders::game::*;
 use invaders::*;
 
@@ -19,11 +20,11 @@ fn main() {
             }),
             ..default()
         }))
-        .add_systems(Update, (make_visible, close_on_esc).chain())
-        .add_plugins(WorldPlugin)
-        .add_plugins(PlayerPlugin)
-        .add_plugins(AliensPlugin)
-        .add_plugins(LasersPlugin)
+        .add_plugins(MenuPlugin)
         .add_plugins(GamePlugin)
+        .add_state::<AppState>()
+        .add_systems(Startup, (spawn_camera, add_resources))
+        .add_systems(Update, (make_visible, close_on_esc).chain())
+        .insert_resource(ClearColor(Color::BLACK))
         .run();
 }

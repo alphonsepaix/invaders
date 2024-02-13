@@ -1,4 +1,6 @@
-use super::{despawn_screen, GameState};
+#![allow(clippy::type_complexity)]
+
+use super::{despawn_screen, AppState};
 use crate::game::resources::*;
 use crate::settings::*;
 use bevy::app::AppExit;
@@ -8,12 +10,12 @@ pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Menu), menu_setup)
+        app.add_systems(OnEnter(AppState::Menu), menu_setup)
             .add_systems(
                 Update,
-                (menu_action, button_system).run_if(in_state(GameState::Menu)),
+                (menu_action, button_system).run_if(in_state(AppState::Menu)),
             )
-            .add_systems(OnExit(GameState::Menu), despawn_screen::<OnMenuScreen>);
+            .add_systems(OnExit(AppState::Menu), despawn_screen::<OnMenuScreen>);
     }
 }
 
@@ -77,11 +79,11 @@ pub fn menu_setup(
                     // Game name
                     parent.spawn(
                         TextBundle::from_section(
-                            "Snake".to_uppercase(),
+                            "Invaders".to_uppercase(),
                             TextStyle {
                                 font_size: MENU_TITLE_SIZE,
                                 color: MENU_TEXT_COLOR,
-                                font: asset_server.load("font.ttf"),
+                                font: asset_server.load("fonts/font.ttf"),
                             },
                         )
                         .with_style(Style {
@@ -165,12 +167,12 @@ fn menu_action(
         (Changed<Interaction>, With<Button>),
     >,
     mut app_exit_events: EventWriter<AppExit>,
-    mut game_state: ResMut<NextState<GameState>>,
+    mut game_state: ResMut<NextState<AppState>>,
 ) {
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
             match menu_button_action {
-                MenuButtonAction::Play => game_state.set(GameState::Game),
+                MenuButtonAction::Play => game_state.set(AppState::InGame),
                 MenuButtonAction::Quit => app_exit_events.send(AppExit),
             }
         }
