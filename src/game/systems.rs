@@ -7,6 +7,7 @@ use crate::game::resources::*;
 use crate::game::ui::*;
 use crate::settings::*;
 use crate::*;
+use bevy::app::AppExit;
 use bevy::core::FrameCount;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
@@ -623,4 +624,25 @@ pub fn reset_game_state(
 ) {
     score.0 = 0;
     lives_remaining.0 = 3;
+}
+
+pub fn handle_input(
+    mut app_exit_event_writer: EventWriter<AppExit>,
+    keyboard_input: Res<Input<KeyCode>>,
+    current_state: Res<State<GameState>>,
+    mut alien_timer: ResMut<AlienTimer>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if keyboard_input.just_pressed(KeyCode::P) {
+        if let GameState::Running = current_state.get() {
+            next_state.set(GameState::Pause);
+            alien_timer.pause();
+        } else {
+            next_state.set(GameState::Running);
+            alien_timer.unpause();
+        }
+    }
+    if keyboard_input.just_pressed(KeyCode::Q) {
+        app_exit_event_writer.send(AppExit);
+    }
 }

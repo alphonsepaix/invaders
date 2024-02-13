@@ -23,6 +23,7 @@ fn main() {
         .add_plugins(MenuPlugin)
         .add_plugins(GamePlugin)
         .add_state::<AppState>()
+        .add_state::<GameState>()
         .add_systems(Startup, (spawn_camera, add_resources))
         .add_systems(Update, (make_visible, close_on_esc).chain())
         .insert_resource(ClearColor(Color::BLACK))
