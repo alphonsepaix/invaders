@@ -19,6 +19,15 @@ impl InvadersMovingSound {
 }
 
 #[derive(Resource)]
+pub struct ButtonHoveredSound(pub Handle<AudioSource>);
+
+#[derive(Resource)]
+pub struct ButtonPressedSound(pub Handle<AudioSource>);
+
+#[derive(Resource)]
+pub struct AlreadyPlayed(pub bool);
+
+#[derive(Resource)]
 pub struct PlayerScore(pub u32);
 
 #[derive(Resource)]

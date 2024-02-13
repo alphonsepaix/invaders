@@ -20,6 +20,11 @@ pub fn make_visible(mut window: Query<&mut Window>, frames: Res<FrameCount>) {
 }
 
 pub fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(ButtonHoveredSound(asset_server.load("audio/hovered.ogg")));
+    commands.insert_resource(ButtonPressedSound(asset_server.load("audio/pressed.ogg")));
+
+    commands.insert_resource(AlreadyPlayed(false));
+
     let shoot = asset_server.load("audio/shoot.ogg");
     commands.insert_resource(ShootSound(shoot));
     let explosion = asset_server.load("audio/explosion.ogg");
