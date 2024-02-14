@@ -93,13 +93,33 @@ pub fn spawn_player(
     asset_server: Res<AssetServer>,
 ) {
     let window = window_query.single();
+    let y_pos = FLOOR_HEIGHT + PLAYER_SIZE.y / 2.0 + FLOOR_THICKNESS / 2.0;
     commands.spawn((
         SpriteBundle {
             texture: asset_server.load("sprites/player.png"),
-            transform: Transform::from_xyz(window.width() / 2.0, FLOOR_HEIGHT, 0.0),
+            transform: Transform::from_xyz(window.width() / 2.0, y_pos, 0.0),
             ..default()
         },
         Player,
+        OnGameScreen,
+    ));
+}
+
+pub fn spawn_floor(mut commands: Commands) {
+    let window_width = get_window_resolution().x;
+    commands.spawn((
+        SpriteBundle {
+            sprite: Sprite {
+                color: Color::WHITE,
+                ..default()
+            },
+            transform: Transform {
+                translation: Vec3::new(window_width / 2.0, FLOOR_HEIGHT, 0.0),
+                scale: Vec3::new(window_width, FLOOR_THICKNESS, 0.0),
+                ..default()
+            },
+            ..default()
+        },
         OnGameScreen,
     ));
 }
@@ -108,6 +128,7 @@ pub fn spawn_aliens(
     mut commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
     asset_server: Res<AssetServer>,
+    mut alien_timer: ResMut<AlienTimer>,
 ) {
     let window = window_query.single();
 
@@ -142,6 +163,9 @@ pub fn spawn_aliens(
             translation.y -= SPACE_BETWEEN_ALIENS.y + ALIEN_SIZE.y;
         }
     }
+
+    // Reset the timer.
+    alien_timer.set_duration(Duration::from_secs_f32(ALIEN_TICK_DURATION));
 }
 
 pub fn spawn_shelters(
@@ -275,12 +299,7 @@ pub fn player_shoot(
     keyboard_input: Res<Input<KeyCode>>,
     shoot_sound: Res<ShootSound>,
 ) {
-    if laser_query.get_single().is_ok() {
-        // A laser shot by the player is still visible.
-        return;
-    }
-
-    if keyboard_input.pressed(KeyCode::Space) {
+    if laser_query.get_single().is_err() && keyboard_input.pressed(KeyCode::Space) {
         if let Ok(player_transform) = player_query.get_single() {
             let translation = player_transform.translation;
             let half_player_height = PLAYER_SIZE.x / 2.0;
@@ -384,7 +403,7 @@ pub fn despawn_lasers(
     lasers_query.iter().for_each(|(entity, transform)| {
         let y_bottom = transform.translation.y - LASER_SIZE.y / 2.0;
 
-        if y_bottom > window.height() || y_bottom < 0.0 {
+        if y_bottom > window.height() || y_bottom < FLOOR_HEIGHT + FLOOR_THICKNESS / 2.0 {
             commands.entity(entity).despawn();
         }
     })
@@ -550,7 +569,8 @@ pub fn handle_player_hit(
     player_query: Query<Entity, (With<Player>, Without<Laser>)>,
     explosion_sound: Res<ExplosionSound>,
     mut lives_remaining: ResMut<LivesRemaining>,
-    mut next_state: ResMut<NextState<GameState>>,
+    mut next_game_state: ResMut<NextState<GameState>>,
+    mut next_transition_state: ResMut<NextState<TransitionState>>,
 ) {
     if player_hit_event_reader.read().next().is_some() {
         if let Ok(player_entity) = player_query.get_single() {
@@ -564,10 +584,10 @@ pub fn handle_player_hit(
 
             // Decrease the number of lives remaining.
             lives_remaining.0 = lives_remaining.0.saturating_sub(1);
-            println!("Lives remaining: {}", lives_remaining.0);
 
             if lives_remaining.0 > 0 {
-                next_state.set(GameState::Transition);
+                next_game_state.set(GameState::Transition);
+                next_transition_state.set(TransitionState::PlayerKilled);
             } else {
                 // Game over.
                 game_over_event_writer.send(GameOver);
@@ -582,7 +602,10 @@ pub fn handle_alien_hit(
     aliens_query: Query<&Alien, Without<Laser>>,
     invader_killed_sound: Res<InvaderKilledSound>,
     mut alien_timer: ResMut<AlienTimer>,
+    mut lives_remaining: ResMut<LivesRemaining>,
     mut score: ResMut<PlayerScore>,
+    mut next_game_state: ResMut<NextState<GameState>>,
+    mut next_transition_state: ResMut<NextState<TransitionState>>,
 ) {
     if let Some(AlienHit { alien_type, id }) = alien_hit_event_reader.read().next() {
         // A mystery ship has a sound bundled with it, so we need to stop it
@@ -597,11 +620,17 @@ pub fn handle_alien_hit(
 
         // Increase the player score.
         score.0 += alien_type.value();
-        println!("Score: {}", score.0);
 
-        // If there are less than 25 aliens remaining, increase their speed
-        // every time anyone one of them is killed.
-        if aliens_query.iter().count() < 25 {
+        let aliens_remaining = aliens_query.iter().count() - 1;
+        if aliens_remaining == 0 {
+            next_game_state.set(GameState::Transition);
+            next_transition_state.set(TransitionState::AliensKilled);
+            if lives_remaining.0 < 5 {
+                lives_remaining.0 += 1;
+            }
+        } else if aliens_remaining < 25 {
+            // If there are less than 25 aliens remaining, increase their speed
+            // every time anyone one of them is killed.
             let current_duration = alien_timer.duration();
             let next_duration = current_duration.as_secs_f32() * 0.95;
             alien_timer.set_duration(Duration::from_secs_f32(next_duration));
@@ -611,13 +640,14 @@ pub fn handle_alien_hit(
 
 pub fn handle_game_over(
     mut game_over_event_reader: EventReader<GameOver>,
-    mut next_state: ResMut<NextState<AppState>>,
+    mut next_game_state: ResMut<NextState<GameState>>,
+    mut next_transition_state: ResMut<NextState<TransitionState>>,
     mut already_played: ResMut<AlreadyPlayed>,
 ) {
     if game_over_event_reader.read().next().is_some() {
-        next_state.set(AppState::Menu);
+        next_game_state.set(GameState::Transition);
+        next_transition_state.set(TransitionState::GameOver);
         already_played.0 = true;
-        println!("Game over!");
     }
 }
 
@@ -654,12 +684,24 @@ pub fn reset_transition_timer(mut timer: ResMut<TransitionTimer>) {
     timer.reset();
 }
 
-pub fn transition_countdown(
-    mut game_state: ResMut<NextState<GameState>>,
+pub fn transition_delay(
     time: Res<Time>,
+    current_state: Res<State<TransitionState>>,
+    mut next_app_state: ResMut<NextState<AppState>>,
+    mut next_game_state: ResMut<NextState<GameState>>,
+    mut next_transition_state: ResMut<NextState<TransitionState>>,
     mut timer: ResMut<TransitionTimer>,
 ) {
     if timer.tick(time.delta()).finished() {
-        game_state.set(GameState::Running);
+        match current_state.get() {
+            TransitionState::PlayerKilled | TransitionState::AliensKilled => {
+                next_game_state.set(GameState::Running)
+            }
+            TransitionState::GameOver => next_app_state.set(AppState::Menu),
+            TransitionState::Unset => (),
+        }
+        // Maybe a state is not the right structure here.
+        // We could use a resource instead.
+        next_transition_state.set(TransitionState::Unset);
     }
 }

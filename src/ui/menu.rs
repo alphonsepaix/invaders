@@ -76,7 +76,6 @@ pub fn menu_setup(
                     ..default()
                 })
                 .with_children(|parent| {
-                    // Game name
                     parent.spawn(
                         TextBundle::from_section(
                             "Invaders".to_uppercase(),
@@ -93,7 +92,6 @@ pub fn menu_setup(
                     );
 
                     let play_button_text = if already_played.0 { "Replay" } else { "Play" };
-                    // Play button
                     parent
                         .spawn((
                             ButtonBundle {
@@ -110,7 +108,6 @@ pub fn menu_setup(
                             ));
                         });
 
-                    // Quit button
                     parent
                         .spawn((
                             ButtonBundle {

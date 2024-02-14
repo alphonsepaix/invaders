@@ -25,11 +25,13 @@ pub const UFO_SIZE: Vec2 = Vec2::new(82.0, 36.0);
 pub const UFO_SPEED: f32 = 150.0;
 
 pub const LASER_SIZE: Vec2 = Vec2::new(5.0, 15.0);
-pub const PLAYER_LASER_SPEED: f32 = 600.0;
+// pub const PLAYER_LASER_SPEED: f32 = 600.0;
+pub const PLAYER_LASER_SPEED: f32 = 2800.0;
 pub const ALIEN_LASER_SPEED: f32 = 300.0;
 pub const MAX_ALIEN_LASERS: usize = 4;
 
-pub const FLOOR_HEIGHT: f32 = 60.0;
+pub const FLOOR_HEIGHT: f32 = 50.0;
+pub const FLOOR_THICKNESS: f32 = 5.0;
 
 pub const BACKGROUND_COLOR: Color = Color::BLACK;
 pub const SCOREBOARD_FONT_SIZE: f32 = 28.0;

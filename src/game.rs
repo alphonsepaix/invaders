@@ -17,6 +17,7 @@ impl Plugin for GamePlugin {
             OnEnter(AppState::InGame),
             (
                 spawn_player,
+                spawn_floor,
                 spawn_shelters,
                 spawn_aliens,
                 play_main_music,
@@ -67,11 +68,9 @@ impl Plugin for GamePlugin {
         .add_systems(OnEnter(GameState::Pause), pause_setup)
         .add_systems(OnExit(GameState::Pause), despawn_screen::<OnPauseScreen>)
         .add_systems(OnEnter(GameState::Transition), reset_transition_timer)
-        .add_systems(
-            Update,
-            transition_countdown.run_if(in_state(GameState::Transition)),
-        )
-        .add_systems(OnExit(GameState::Transition), spawn_player)
+        .add_systems(Update, transition_delay.run_if(in_state(AppState::InGame)))
+        .add_systems(OnExit(TransitionState::PlayerKilled), spawn_player)
+        .add_systems(OnExit(TransitionState::AliensKilled), spawn_aliens)
         .add_systems(
             OnExit(AppState::InGame),
             (despawn_screen::<OnGameScreen>, reset_game_state),
