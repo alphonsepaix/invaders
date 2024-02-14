@@ -27,3 +27,7 @@ pub fn despawn_screen<T: Component>(mut commands: Commands, entities: Query<Enti
         commands.entity(entity).despawn_recursive();
     }
 }
+
+pub fn return_to_menu(mut next_state: ResMut<NextState<AppState>>) {
+    next_state.set(AppState::Menu);
+}

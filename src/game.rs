@@ -2,13 +2,12 @@ pub mod components;
 pub mod events;
 pub mod resources;
 pub mod systems;
-pub mod ui;
 
+use crate::ui::*;
 use bevy::prelude::*;
 use components::*;
 use events::*;
 use systems::*;
-use ui::*;
 
 pub struct GamePlugin;
 

@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use bevy::window::close_on_esc;
 use invaders::game::systems::*;
-use invaders::game::ui::*;
 use invaders::game::*;
+use invaders::ui::*;
 use invaders::*;
 
 fn main() {

@@ -1,5 +1,6 @@
 pub mod game;
 pub mod settings;
+pub mod ui;
 
 use crate::settings::*;
 use bevy::prelude::*;

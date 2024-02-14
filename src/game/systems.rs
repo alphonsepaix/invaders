@@ -4,8 +4,8 @@
 use crate::game::components::*;
 use crate::game::events::*;
 use crate::game::resources::*;
-use crate::game::ui::*;
 use crate::settings::*;
+use crate::ui::*;
 use crate::*;
 use bevy::app::AppExit;
 use bevy::core::FrameCount;
