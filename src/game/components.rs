@@ -51,6 +51,9 @@ pub struct Laser {
     pub speed: f32,
 }
 
+#[derive(Component)]
+pub struct ExplosionTimer(pub Timer);
+
 impl Alien {
     pub fn color(&self) -> Color {
         match self {

@@ -26,6 +26,7 @@ impl Plugin for GamePlugin {
         )
         .add_event::<PlayerHit>()
         .add_event::<AlienHit>()
+        .add_event::<LaserExplosion>()
         .add_event::<GameOver>()
         .add_systems(Update, handle_input.run_if(in_state(AppState::InGame)))
         .add_systems(
@@ -50,7 +51,7 @@ impl Plugin for GamePlugin {
                 .run_if(in_state(GameState::Running)),
         )
         .add_systems(
-            FixedUpdate,
+            Update,
             (
                 player_shoot,
                 aliens_shoot,
@@ -58,12 +59,18 @@ impl Plugin for GamePlugin {
                 shelter_hit,
                 spawn_ufo,
                 move_ufo,
-                handle_player_hit,
-                handle_alien_hit,
-                handle_game_over,
             )
                 .run_if(in_state(AppState::InGame))
                 .run_if(in_state(GameState::Running)),
+        )
+        .add_systems(
+            Update,
+            (
+                handle_player_hit,
+                handle_alien_hit,
+                handle_game_over,
+                handle_laser_explosion,
+            ),
         )
         .add_systems(OnEnter(GameState::Pause), pause_setup)
         .add_systems(OnExit(GameState::Pause), despawn_screen::<OnPauseScreen>)

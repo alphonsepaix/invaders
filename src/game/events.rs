@@ -12,3 +12,6 @@ pub struct AlienHit {
 
 #[derive(Event)]
 pub struct GameOver;
+
+#[derive(Event)]
+pub struct LaserExplosion(pub Entity);

@@ -394,7 +394,8 @@ pub fn move_lasers(mut lasers_query: Query<(&mut Transform, &Laser)>, time: Res<
 }
 
 pub fn despawn_lasers(
-    mut commands: Commands,
+    // mut commands: Commands,
+    mut laser_explosion_event_writer: EventWriter<LaserExplosion>,
     lasers_query: Query<(Entity, &Transform), With<Laser>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
@@ -404,15 +405,17 @@ pub fn despawn_lasers(
         let y_bottom = transform.translation.y - LASER_SIZE.y / 2.0;
 
         if y_bottom > window.height() || y_bottom < FLOOR_HEIGHT + FLOOR_THICKNESS / 2.0 {
-            commands.entity(entity).despawn();
+            // commands.entity(entity).despawn();
+            laser_explosion_event_writer.send(LaserExplosion(entity));
         }
     })
 }
 
 pub fn check_for_collisions(
-    mut commands: Commands,
+    // mut commands: Commands,
     mut alien_hit_event_writer: EventWriter<AlienHit>,
     mut player_hit_event_writer: EventWriter<PlayerHit>,
+    mut laser_explosion_event_writer: EventWriter<LaserExplosion>,
     player_query: Query<&Transform, (With<Player>, Without<Laser>)>,
     aliens_query: Query<(Entity, &Transform, &Alien), Without<Laser>>,
     player_laser_query: Query<(Entity, &Transform), (With<Laser>, With<Player>)>,
@@ -430,7 +433,8 @@ pub fn check_for_collisions(
                 .distance(laser_transform.translation)
                 < half_player_height + half_laser_height
             {
-                commands.entity(laser_entity).despawn();
+                // commands.entity(laser_entity).despawn();
+                laser_explosion_event_writer.send(LaserExplosion(laser_entity));
                 player_hit_event_writer.send(PlayerHit);
             }
         }
@@ -444,7 +448,8 @@ pub fn check_for_collisions(
                 .distance(laser_transform.translation)
                 < half_alien_height + half_laser_height
             {
-                commands.entity(laser_entity).despawn();
+                // commands.entity(laser_entity).despawn();
+                laser_explosion_event_writer.send(LaserExplosion(laser_entity));
                 alien_hit_event_writer.send(AlienHit {
                     alien_type: alien_type.clone(),
                     id: alien_entity,
@@ -456,6 +461,7 @@ pub fn check_for_collisions(
 
 pub fn shelter_hit(
     mut commands: Commands,
+    mut laser_explosion_event_writer: EventWriter<LaserExplosion>,
     mut shelters_query: Query<(Entity, &Transform, &mut Shelter)>,
     lasers_query: Query<(Entity, &Transform), With<Laser>>,
 ) {
@@ -466,7 +472,8 @@ pub fn shelter_hit(
                 .distance(laser_transform.translation)
                 <= get_shelter_size().x / 2.0 + LASER_SIZE.x / 2.0
             {
-                commands.entity(laser_entity).despawn();
+                // commands.entity(laser_entity).despawn();
+                laser_explosion_event_writer.send(LaserExplosion(laser_entity));
                 shelter.armor = shelter.armor.saturating_sub(5);
             }
             if shelter.armor == 0 {
@@ -610,6 +617,7 @@ pub fn handle_alien_hit(
     if let Some(AlienHit { alien_type, id }) = alien_hit_event_reader.read().next() {
         // A mystery ship has a sound bundled with it, so we need to stop it
         // when it gets hit with a recursive despawn.
+        info!("Alien {:?}", *id);
         commands.entity(*id).despawn_recursive();
 
         // Play an explosion sound when an alien dies.
@@ -648,6 +656,51 @@ pub fn handle_game_over(
         next_game_state.set(GameState::Transition);
         next_transition_state.set(TransitionState::GameOver);
         already_played.0 = true;
+    }
+}
+
+pub fn handle_laser_explosion(
+    mut commands: Commands,
+    mut laser_explosion_event_reader: EventReader<LaserExplosion>,
+    lasers_query: Query<(&Laser, &Transform)>,
+    mut explosions_query: Query<(Entity, &mut ExplosionTimer)>,
+    time: Res<Time>,
+) {
+    for laser in laser_explosion_event_reader.read() {
+        let laser_entity = laser.0;
+        info!("Laser {:?}", laser_entity);
+        let (Laser { direction, .. }, transform) = lasers_query.get(laser_entity).unwrap();
+        let mut translation = transform.translation;
+        let d = match direction {
+            EntityDirection::Up => 1.0,
+            EntityDirection::Down => -1.0,
+            _ => panic!("Laser can only go up or down."),
+        };
+        translation.y += transform.scale.y / 2.0 * d;
+        // Show an explosion.
+        commands.spawn((
+            SpriteBundle {
+                transform: Transform {
+                    translation: transform.translation,
+                    scale: Vec3::new(20.0, 20.0, 0.0),
+                    ..default()
+                },
+                sprite: Sprite {
+                    color: Color::RED,
+                    ..default()
+                },
+                ..default()
+            },
+            ExplosionTimer(Timer::from_seconds(1.0, TimerMode::Once)),
+            OnGameScreen,
+        ));
+        commands.entity(laser_entity).despawn();
+    }
+
+    for (entity, mut explosion_timer) in explosions_query.iter_mut() {
+        if explosion_timer.0.tick(time.delta()).just_finished() {
+            commands.entity(entity).despawn();
+        }
     }
 }
 

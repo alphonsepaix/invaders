@@ -25,8 +25,8 @@ pub const UFO_SIZE: Vec2 = Vec2::new(82.0, 36.0);
 pub const UFO_SPEED: f32 = 150.0;
 
 pub const LASER_SIZE: Vec2 = Vec2::new(5.0, 15.0);
-// pub const PLAYER_LASER_SPEED: f32 = 600.0;
-pub const PLAYER_LASER_SPEED: f32 = 2800.0;
+pub const PLAYER_LASER_SPEED: f32 = 600.0;
+// pub const PLAYER_LASER_SPEED: f32 = 2800.0;
 pub const ALIEN_LASER_SPEED: f32 = 300.0;
 pub const MAX_ALIEN_LASERS: usize = 4;
 
@@ -37,13 +37,11 @@ pub const BACKGROUND_COLOR: Color = Color::BLACK;
 pub const SCOREBOARD_FONT_SIZE: f32 = 28.0;
 pub const TEXT_COLOR: Color = Color::YELLOW;
 pub const MENU_TEXT_COLOR: Color = Color::YELLOW;
-pub const RESULTS_TEXT_COLOR: Color = Color::rgb(0.8, 0.8, 0.8);
 pub const TEXT_BUTTON_SIZE: f32 = 40.0;
 pub const BUTTON_WIDTH: f32 = 250.0;
 pub const BUTTON_HEIGHT: f32 = 65.0;
 pub const BUTTON_MARGIN: f32 = 20.0;
 pub const MENU_TITLE_SIZE: f32 = 40.0;
-pub const RESULTS_TEXT_SIZE: f32 = 30.0;
 pub const NORMAL_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
 pub const HOVERED_BUTTON: Color = Color::rgb(0.35, 0.35, 0.35);
 pub const HOVERED_PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
