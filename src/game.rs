@@ -33,8 +33,7 @@ impl Plugin for GamePlugin {
             FixedUpdate,
             (move_player, restrict_player_movement)
                 .chain()
-                .run_if(in_state(AppState::InGame))
-                .run_if(in_state(GameState::Running)),
+                .run_if(in_state(AppState::InGame)), // .run_if(in_state(GameState::Running)),
         )
         .add_systems(
             FixedUpdate,
@@ -59,18 +58,13 @@ impl Plugin for GamePlugin {
                 shelter_hit,
                 spawn_ufo,
                 move_ufo,
-            )
-                .run_if(in_state(AppState::InGame))
-                .run_if(in_state(GameState::Running)),
-        )
-        .add_systems(
-            Update,
-            (
                 handle_player_hit,
                 handle_alien_hit,
                 handle_game_over,
                 handle_laser_explosion,
-            ),
+            )
+                .run_if(in_state(AppState::InGame))
+                .run_if(in_state(GameState::Running)),
         )
         .add_systems(OnEnter(GameState::Pause), pause_setup)
         .add_systems(OnExit(GameState::Pause), despawn_screen::<OnPauseScreen>)

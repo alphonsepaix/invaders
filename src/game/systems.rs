@@ -9,7 +9,9 @@ use crate::ui::*;
 use crate::*;
 use bevy::app::AppExit;
 use bevy::core::FrameCount;
+use bevy::prelude::shape::Circle;
 use bevy::prelude::*;
+use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::PrimaryWindow;
 use itertools::izip;
 use rand::random;
@@ -404,8 +406,9 @@ pub fn despawn_lasers(
     lasers_query.iter().for_each(|(entity, transform)| {
         let y_bottom = transform.translation.y - LASER_SIZE.y / 2.0;
 
-        if y_bottom > window.height() || y_bottom < FLOOR_HEIGHT + FLOOR_THICKNESS / 2.0 {
-            // commands.entity(entity).despawn();
+        if y_bottom > window.height() - LASER_SIZE.y
+            || y_bottom < FLOOR_HEIGHT + FLOOR_THICKNESS / 2.0
+        {
             laser_explosion_event_writer.send(LaserExplosion(entity));
         }
     })
@@ -433,7 +436,6 @@ pub fn check_for_collisions(
                 .distance(laser_transform.translation)
                 < half_player_height + half_laser_height
             {
-                // commands.entity(laser_entity).despawn();
                 laser_explosion_event_writer.send(LaserExplosion(laser_entity));
                 player_hit_event_writer.send(PlayerHit);
             }
@@ -448,7 +450,6 @@ pub fn check_for_collisions(
                 .distance(laser_transform.translation)
                 < half_alien_height + half_laser_height
             {
-                // commands.entity(laser_entity).despawn();
                 laser_explosion_event_writer.send(LaserExplosion(laser_entity));
                 alien_hit_event_writer.send(AlienHit {
                     alien_type: alien_type.clone(),
@@ -472,7 +473,6 @@ pub fn shelter_hit(
                 .distance(laser_transform.translation)
                 <= get_shelter_size().x / 2.0 + LASER_SIZE.x / 2.0
             {
-                // commands.entity(laser_entity).despawn();
                 laser_explosion_event_writer.send(LaserExplosion(laser_entity));
                 shelter.armor = shelter.armor.saturating_sub(5);
             }
@@ -617,31 +617,32 @@ pub fn handle_alien_hit(
     if let Some(AlienHit { alien_type, id }) = alien_hit_event_reader.read().next() {
         // A mystery ship has a sound bundled with it, so we need to stop it
         // when it gets hit with a recursive despawn.
-        info!("Alien {:?}", *id);
-        commands.entity(*id).despawn_recursive();
+        if let Some(entity_commands) = commands.get_entity(*id) {
+            entity_commands.despawn_recursive();
 
-        // Play an explosion sound when an alien dies.
-        commands.spawn(AudioBundle {
-            source: invader_killed_sound.0.clone(),
-            settings: PlaybackSettings::DESPAWN,
-        });
+            // Play an explosion sound when an alien dies.
+            commands.spawn(AudioBundle {
+                source: invader_killed_sound.0.clone(),
+                settings: PlaybackSettings::DESPAWN,
+            });
 
-        // Increase the player score.
-        score.0 += alien_type.value();
+            // Increase the player score.
+            score.0 += alien_type.value();
 
-        let aliens_remaining = aliens_query.iter().count() - 1;
-        if aliens_remaining == 0 {
-            next_game_state.set(GameState::Transition);
-            next_transition_state.set(TransitionState::AliensKilled);
-            if lives_remaining.0 < 5 {
-                lives_remaining.0 += 1;
+            let aliens_remaining = aliens_query.iter().count() - 1;
+            if aliens_remaining == 0 {
+                next_game_state.set(GameState::Transition);
+                next_transition_state.set(TransitionState::AliensKilled);
+                if lives_remaining.0 < 5 {
+                    lives_remaining.0 += 1;
+                }
+            } else if aliens_remaining < 25 {
+                // If there are less than 25 aliens remaining, increase their speed
+                // every time anyone one of them is killed.
+                let current_duration = alien_timer.duration();
+                let next_duration = current_duration.as_secs_f32() * 0.95;
+                alien_timer.set_duration(Duration::from_secs_f32(next_duration));
             }
-        } else if aliens_remaining < 25 {
-            // If there are less than 25 aliens remaining, increase their speed
-            // every time anyone one of them is killed.
-            let current_duration = alien_timer.duration();
-            let next_duration = current_duration.as_secs_f32() * 0.95;
-            alien_timer.set_duration(Duration::from_secs_f32(next_duration));
         }
     }
 }
@@ -662,43 +663,38 @@ pub fn handle_game_over(
 pub fn handle_laser_explosion(
     mut commands: Commands,
     mut laser_explosion_event_reader: EventReader<LaserExplosion>,
-    lasers_query: Query<(&Laser, &Transform)>,
-    mut explosions_query: Query<(Entity, &mut ExplosionTimer)>,
+    lasers_query: Query<&Transform, With<Laser>>,
+    mut explosions_query: Query<(Entity, &mut Transform, &mut ExplosionTimer), Without<Laser>>,
     time: Res<Time>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
 ) {
     for laser in laser_explosion_event_reader.read() {
         let laser_entity = laser.0;
-        info!("Laser {:?}", laser_entity);
-        let (Laser { direction, .. }, transform) = lasers_query.get(laser_entity).unwrap();
-        let mut translation = transform.translation;
-        let d = match direction {
-            EntityDirection::Up => 1.0,
-            EntityDirection::Down => -1.0,
-            _ => panic!("Laser can only go up or down."),
-        };
-        translation.y += transform.scale.y / 2.0 * d;
-        // Show an explosion.
-        commands.spawn((
-            SpriteBundle {
-                transform: Transform {
-                    translation: transform.translation,
-                    scale: Vec3::new(20.0, 20.0, 0.0),
+        if let Ok(transform) = lasers_query.get(laser_entity) {
+            // Show an explosion.
+            commands.spawn((
+                MaterialMesh2dBundle {
+                    mesh: meshes.add(Circle::default().into()).into(),
+                    material: materials.add(ColorMaterial::from(Color::RED)),
+                    transform: Transform::from_translation(transform.translation)
+                        .with_scale(Vec2::splat(LASER_SIZE.y).extend(0.0)),
                     ..default()
                 },
-                sprite: Sprite {
-                    color: Color::RED,
-                    ..default()
-                },
-                ..default()
-            },
-            ExplosionTimer(Timer::from_seconds(1.0, TimerMode::Once)),
-            OnGameScreen,
-        ));
-        commands.entity(laser_entity).despawn();
+                ExplosionTimer(Timer::from_seconds(EXPLOSION_DURATION, TimerMode::Once)),
+                OnGameScreen,
+            ));
+            commands.entity(laser_entity).despawn();
+        }
     }
 
-    for (entity, mut explosion_timer) in explosions_query.iter_mut() {
-        if explosion_timer.0.tick(time.delta()).just_finished() {
+    for (entity, mut transform, mut explosion_timer) in explosions_query.iter_mut() {
+        explosion_timer.0.tick(time.delta());
+        let elapsed = explosion_timer.0.elapsed_secs();
+        if elapsed > EXPLOSION_DURATION / 2.0 {
+            transform.scale = Vec2::splat(LASER_SIZE.y).extend(0.0) * 1.5;
+        }
+        if explosion_timer.0.just_finished() {
             commands.entity(entity).despawn();
         }
     }
@@ -738,6 +734,8 @@ pub fn reset_transition_timer(mut timer: ResMut<TransitionTimer>) {
 }
 
 pub fn transition_delay(
+    mut commands: Commands,
+    lasers_query: Query<Entity, With<Laser>>,
     time: Res<Time>,
     current_state: Res<State<TransitionState>>,
     mut next_app_state: ResMut<NextState<AppState>>,
@@ -748,7 +746,11 @@ pub fn transition_delay(
     if timer.tick(time.delta()).finished() {
         match current_state.get() {
             TransitionState::PlayerKilled | TransitionState::AliensKilled => {
-                next_game_state.set(GameState::Running)
+                next_game_state.set(GameState::Running);
+                // Despawn all lasers.
+                for entity in lasers_query.iter() {
+                    commands.entity(entity).despawn();
+                }
             }
             TransitionState::GameOver => next_app_state.set(AppState::Menu),
             TransitionState::Unset => (),
