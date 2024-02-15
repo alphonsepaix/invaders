@@ -54,6 +54,9 @@ pub struct Laser {
 #[derive(Component)]
 pub struct ExplosionTimer(pub Timer);
 
+#[derive(Component)]
+pub struct XpTimer(pub Timer);
+
 impl Alien {
     pub fn color(&self) -> Color {
         match self {

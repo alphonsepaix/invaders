@@ -62,6 +62,7 @@ impl Plugin for GamePlugin {
                 handle_alien_hit,
                 handle_game_over,
                 handle_laser_explosion,
+                update_xp_texts,
             )
                 .run_if(in_state(AppState::InGame))
                 .run_if(in_state(GameState::Running)),

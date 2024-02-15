@@ -454,6 +454,7 @@ pub fn check_for_collisions(
                 alien_hit_event_writer.send(AlienHit {
                     alien_type: alien_type.clone(),
                     id: alien_entity,
+                    position: alien_transform.translation.truncate(),
                 });
             }
         }
@@ -607,6 +608,7 @@ pub fn handle_alien_hit(
     mut commands: Commands,
     mut alien_hit_event_reader: EventReader<AlienHit>,
     aliens_query: Query<&Alien, Without<Laser>>,
+    asset_server: Res<AssetServer>,
     invader_killed_sound: Res<InvaderKilledSound>,
     mut alien_timer: ResMut<AlienTimer>,
     mut lives_remaining: ResMut<LivesRemaining>,
@@ -614,11 +616,17 @@ pub fn handle_alien_hit(
     mut next_game_state: ResMut<NextState<GameState>>,
     mut next_transition_state: ResMut<NextState<TransitionState>>,
 ) {
-    if let Some(AlienHit { alien_type, id }) = alien_hit_event_reader.read().next() {
+    if let Some(AlienHit {
+        alien_type,
+        id,
+        position,
+    }) = alien_hit_event_reader.read().next()
+    {
         // A mystery ship has a sound bundled with it, so we need to stop it
         // when it gets hit with a recursive despawn.
         if let Some(entity_commands) = commands.get_entity(*id) {
             entity_commands.despawn_recursive();
+            info!("Alien hit at {}", position);
 
             // Play an explosion sound when an alien dies.
             commands.spawn(AudioBundle {
@@ -630,6 +638,26 @@ pub fn handle_alien_hit(
             score.0 += alien_type.value();
 
             // Show the alien value.
+            let text = format!("+{}XP", alien_type.value());
+            let font = asset_server.load("fonts/font.ttf");
+            commands.spawn((
+                TextBundle::from_section(
+                    text,
+                    TextStyle {
+                        color: Color::WHITE,
+                        font,
+                        font_size: 20.0,
+                    },
+                )
+                .with_text_alignment(TextAlignment::Center)
+                .with_style(Style {
+                    position_type: PositionType::Absolute,
+                    left: Val::Px(position.x),
+                    bottom: Val::Px(position.y),
+                    ..default()
+                }),
+                XpTimer(Timer::from_seconds(XP_GAIN_DURATION, TimerMode::Once)),
+            ));
 
             let aliens_remaining = aliens_query.iter().count() - 1;
             if aliens_remaining == 0 {
@@ -699,6 +727,22 @@ pub fn handle_laser_explosion(
         if explosion_timer.0.just_finished() {
             commands.entity(entity).despawn();
         }
+    }
+}
+
+pub fn update_xp_texts(
+    mut commands: Commands,
+    mut texts_query: Query<(Entity, &mut Text, &mut XpTimer)>,
+    time: Res<Time>,
+) {
+    for (entity, mut text, mut xp_timer) in texts_query.iter_mut() {
+        xp_timer.0.tick(time.delta());
+        if xp_timer.0.finished() {
+            commands.entity(entity).despawn();
+        }
+        let alpha = (XP_GAIN_DURATION - xp_timer.0.elapsed_secs()) / XP_GAIN_DURATION;
+        info!("Setting alpha: {alpha}");
+        text.sections[0].style.color.set_a(alpha);
     }
 }
 

@@ -8,6 +8,7 @@ pub struct PlayerHit;
 pub struct AlienHit {
     pub alien_type: Alien,
     pub id: Entity,
+    pub position: Vec2,
 }
 
 #[derive(Event)]
