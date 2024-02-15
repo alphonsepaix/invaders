@@ -727,7 +727,15 @@ pub fn handle_laser_explosion(
     mut commands: Commands,
     mut laser_explosion_event_reader: EventReader<LaserExplosion>,
     lasers_query: Query<&Transform, With<Laser>>,
-    mut explosions_query: Query<(Entity, &mut Transform, &mut ExplosionTimer), Without<Laser>>,
+    mut explosions_query: Query<
+        (
+            Entity,
+            &mut Transform,
+            &mut Handle<ColorMaterial>,
+            &mut ExplosionTimer,
+        ),
+        Without<Laser>,
+    >,
     time: Res<Time>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -736,6 +744,7 @@ pub fn handle_laser_explosion(
         let laser_entity = laser.0;
         if let Ok(transform) = lasers_query.get(laser_entity) {
             // Show an explosion.
+            // let material_handle = materials.add(ColorMaterial::from(Color::RED));
             commands.spawn((
                 MaterialMesh2dBundle {
                     mesh: meshes.add(Circle::default().into()).into(),
@@ -751,12 +760,15 @@ pub fn handle_laser_explosion(
         }
     }
 
-    for (entity, mut transform, mut explosion_timer) in explosions_query.iter_mut() {
+    for (entity, mut transform, color, mut explosion_timer) in explosions_query.iter_mut() {
         explosion_timer.0.tick(time.delta());
         let elapsed = explosion_timer.0.elapsed_secs();
-        if elapsed > EXPLOSION_DURATION / 2.0 {
-            transform.scale = Vec2::splat(LASER_SIZE.y).extend(0.0) * 1.5;
-        }
+        let ratio = elapsed / EXPLOSION_DURATION;
+        let radius = EXPLOSION_MIN_RADIUS + (EXPLOSION_MAX_RADIUS - EXPLOSION_MIN_RADIUS) * ratio;
+        transform.scale = Vec2::splat(radius).extend(0.0);
+        let alpha = 1.0 - ratio;
+        let color_mat = materials.get_mut(&*color).unwrap();
+        color_mat.color.set_a(alpha);
         if explosion_timer.0.just_finished() {
             commands.entity(entity).despawn();
         }

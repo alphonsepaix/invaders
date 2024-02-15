@@ -31,8 +31,11 @@ pub const PLAYER_LASER_SPEED: f32 = 600.0;
 pub const ALIEN_LASER_SPEED: f32 = 300.0;
 pub const MAX_ALIEN_LASERS: usize = 4;
 
-pub const EXPLOSION_DURATION: f32 = 0.3;
-pub const XP_GAIN_DURATION: f32 = 0.6;
+pub const EXPLOSION_DURATION: f32 = 0.35;
+pub const EXPLOSION_MIN_RADIUS: f32 = 13.0;
+pub const EXPLOSION_MAX_RADIUS: f32 = 30.0;
+
+pub const XP_GAIN_DURATION: f32 = 1.0;
 
 pub const FLOOR_HEIGHT: f32 = 50.0;
 pub const FLOOR_THICKNESS: f32 = 5.0;
