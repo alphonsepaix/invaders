@@ -1,4 +1,4 @@
-use crate::game::components::OnGameScreen;
+use crate::game::components::*;
 use crate::game::resources::{LivesRemaining, PlayerScore};
 use crate::settings::{SCOREBOARD_FONT_SIZE, TEXT_COLOR};
 use crate::ui::{AppState, GameState};
@@ -12,11 +12,20 @@ impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             OnEnter(AppState::InGame),
-            (spawn_scoreboard, spawn_remaining_lives),
+            (
+                spawn_scoreboard,
+                spawn_remaining_lives,
+                spawn_remaining_aliens,
+            ),
         )
         .add_systems(
             Update,
-            (update_scoreboard, update_remaining_lives).run_if(in_state(GameState::Running)),
+            (
+                update_scoreboard,
+                update_remaining_lives,
+                update_remaining_aliens,
+            )
+                .run_if(in_state(GameState::Running)),
         );
     }
 }
@@ -27,6 +36,9 @@ pub struct UiPlayerScore;
 #[derive(Component)]
 pub struct UiLivesRemaining;
 
+#[derive(Component)]
+pub struct UiAliensRemaining;
+
 pub fn spawn_scoreboard(commands: Commands, asset_server: Res<AssetServer>) {
     let style = Style {
         width: Val::Percent(100.0),
@@ -36,7 +48,7 @@ pub fn spawn_scoreboard(commands: Commands, asset_server: Res<AssetServer>) {
         ..default()
     };
     let font = asset_server.load("fonts/font.ttf");
-    spawn_text(commands, style, "Score = ", UiPlayerScore, font);
+    spawn_text(commands, style, "Score=", UiPlayerScore, font);
 }
 
 pub fn spawn_remaining_lives(commands: Commands, asset_server: Res<AssetServer>) {
@@ -48,13 +60,19 @@ pub fn spawn_remaining_lives(commands: Commands, asset_server: Res<AssetServer>)
         ..default()
     };
     let font = asset_server.load("fonts/font.ttf");
-    spawn_text(
-        commands,
-        style,
-        "Lives remaining = ",
-        UiLivesRemaining,
-        font,
-    );
+    spawn_text(commands, style, "Lives=", UiLivesRemaining, font);
+}
+
+pub fn spawn_remaining_aliens(commands: Commands, asset_server: Res<AssetServer>) {
+    let style = Style {
+        width: Val::Percent(100.0),
+        height: Val::Percent(100.0),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::End,
+        ..default()
+    };
+    let font = asset_server.load("fonts/font.ttf");
+    spawn_text(commands, style, "Aliens=", UiAliensRemaining, font);
 }
 
 fn spawn_text(
@@ -74,7 +92,6 @@ fn spawn_text(
                         align_items: AlignItems::End,
                         ..default()
                     },
-                    background_color: Color::BLACK.into(),
                     ..default()
                 })
                 .with_children(|parent| {
@@ -85,13 +102,13 @@ fn spawn_text(
                                 TextStyle {
                                     font_size: SCOREBOARD_FONT_SIZE,
                                     color: TEXT_COLOR,
-                                    font,
+                                    font: font.clone(),
                                 },
                             ),
                             TextSection::from_style(TextStyle {
                                 font_size: SCOREBOARD_FONT_SIZE,
                                 color: TEXT_COLOR,
-                                ..default()
+                                font,
                             }),
                         ]),
                         component,
@@ -115,5 +132,14 @@ pub fn update_remaining_lives(
 ) {
     if let Ok(mut text) = query.get_single_mut() {
         text.sections[1].value = remaining_lives.0.to_string();
+    }
+}
+
+pub fn update_remaining_aliens(
+    aliens_query: Query<&Alien, (Without<Ufo>, Without<Laser>)>,
+    mut query: Query<&mut Text, With<UiAliensRemaining>>,
+) {
+    if let Ok(mut text) = query.get_single_mut() {
+        text.sections[1].value = aliens_query.iter().count().to_string();
     }
 }

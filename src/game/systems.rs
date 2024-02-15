@@ -629,6 +629,8 @@ pub fn handle_alien_hit(
             // Increase the player score.
             score.0 += alien_type.value();
 
+            // Show the alien value.
+
             let aliens_remaining = aliens_query.iter().count() - 1;
             if aliens_remaining == 0 {
                 next_game_state.set(GameState::Transition);
