@@ -178,6 +178,7 @@ pub fn spawn_shelters(
     let window = window_query.single();
 
     let sprite = asset_server.load("sprites/shelter.png");
+    let font = asset_server.load("fonts/font.ttf");
 
     let shelter_size = get_shelter_size();
     let space_between_shelters =
@@ -190,20 +191,43 @@ pub fn spawn_shelters(
     );
 
     for _ in 0..NUM_SHELTERS {
-        commands.spawn((
-            SpriteBundle {
-                texture: sprite.clone(),
-                transform: Transform {
-                    translation,
-                    scale: Vec3::new(SHELTER_SCALE_FACTOR, SHELTER_SCALE_FACTOR, 0.0),
+        let shelter_id = commands
+            .spawn((
+                SpriteBundle {
+                    texture: sprite.clone(),
+                    transform: Transform {
+                        translation,
+                        scale: Vec3::new(SHELTER_SCALE_FACTOR, SHELTER_SCALE_FACTOR, 0.0),
+                        ..default()
+                    },
                     ..default()
                 },
-                ..default()
-            },
-            Shelter { armor: 100 },
-            OnGameScreen,
-        ));
+                Shelter {
+                    armor: INITIAL_ARMOR_VALUE,
+                },
+                OnGameScreen,
+            ))
+            .id();
 
+        commands.spawn((
+            TextBundle::from_section(
+                INITIAL_ARMOR_VALUE.to_string(),
+                TextStyle {
+                    color: Color::WHITE,
+                    font: font.clone(),
+                    font_size: 20.0,
+                },
+            )
+            .with_text_alignment(TextAlignment::Center)
+            .with_style(Style {
+                position_type: PositionType::Absolute,
+                left: Val::Px(translation.x - 15.0),
+                bottom: Val::Px(translation.y - 50.0),
+                ..default()
+            }),
+            OnGameScreen,
+            ShelterArmorText(shelter_id),
+        ));
         translation.x += space_between_shelters + shelter_size.x;
     }
 }
@@ -465,6 +489,7 @@ pub fn shelter_hit(
     mut commands: Commands,
     mut laser_explosion_event_writer: EventWriter<LaserExplosion>,
     mut shelters_query: Query<(Entity, &Transform, &mut Shelter)>,
+    mut armor_texts_query: Query<(Entity, &mut Text, &mut ShelterArmorText)>,
     lasers_query: Query<(Entity, &Transform), With<Laser>>,
 ) {
     for (laser_entity, laser_transform) in lasers_query.iter() {
@@ -476,9 +501,18 @@ pub fn shelter_hit(
             {
                 laser_explosion_event_writer.send(LaserExplosion(laser_entity));
                 shelter.armor = shelter.armor.saturating_sub(5);
-            }
-            if shelter.armor == 0 {
-                commands.entity(shelter_entity).despawn();
+
+                // Retrieve the armor text corresponding to this shelter.
+                let (text_entity, mut text, _) = armor_texts_query
+                    .iter_mut()
+                    .find(|(_, _, t)| t.0 == shelter_entity)
+                    .unwrap();
+                text.sections[0].value = shelter.armor.to_string();
+
+                if shelter.armor == 0 {
+                    commands.entity(shelter_entity).despawn();
+                    commands.entity(text_entity).despawn();
+                }
             }
         }
     }
@@ -626,7 +660,6 @@ pub fn handle_alien_hit(
         // when it gets hit with a recursive despawn.
         if let Some(entity_commands) = commands.get_entity(*id) {
             entity_commands.despawn_recursive();
-            info!("Alien hit at {}", position);
 
             // Play an explosion sound when an alien dies.
             commands.spawn(AudioBundle {
@@ -741,7 +774,6 @@ pub fn update_xp_texts(
             commands.entity(entity).despawn();
         }
         let alpha = (XP_GAIN_DURATION - xp_timer.0.elapsed_secs()) / XP_GAIN_DURATION;
-        info!("Setting alpha: {alpha}");
         text.sections[0].style.color.set_a(alpha);
     }
 }

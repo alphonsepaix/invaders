@@ -46,6 +46,9 @@ pub struct Shelter {
 }
 
 #[derive(Component)]
+pub struct ShelterArmorText(pub Entity);
+
+#[derive(Component)]
 pub struct Laser {
     pub direction: EntityDirection,
     pub speed: f32,
