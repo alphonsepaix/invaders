@@ -690,6 +690,7 @@ pub fn handle_alien_hit(
                     ..default()
                 }),
                 XpTimer(Timer::from_seconds(XP_GAIN_DURATION, TimerMode::Once)),
+                OnGameScreen,
             ));
 
             let aliens_remaining = aliens_query.iter().count() - 1;
