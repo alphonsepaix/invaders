@@ -5,6 +5,14 @@ pub mod ui;
 use crate::settings::*;
 use bevy::prelude::*;
 
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+pub enum AppState {
+    #[default]
+    Menu,
+    Pause,
+    InGame,
+}
+
 pub fn get_window_resolution() -> Vec2 {
     let width = 2.0 * MARGIN
         + ALIENS_PER_LINE as f32 * ALIEN_SIZE.x
@@ -13,6 +21,8 @@ pub fn get_window_resolution() -> Vec2 {
     Vec2::new(width, height)
 }
 
-pub fn get_shelter_size() -> Vec2 {
-    SHELTER_SIZE * SHELTER_SCALE_FACTOR
+pub fn despawn_screen<T: Component>(mut commands: Commands, entities: Query<Entity, With<T>>) {
+    for entity in &entities {
+        commands.entity(entity).despawn_recursive();
+    }
 }

@@ -1,34 +1,8 @@
-use crate::game::components::*;
+use crate::game::components::{Alien, Laser, OnGameScreen, Ufo};
 use crate::game::resources::{LivesRemaining, PlayerScore};
 use crate::settings::{SCOREBOARD_FONT_SIZE, TEXT_COLOR};
-use crate::ui::{AppState, GameState};
-use bevy::app::{App, Plugin, Update};
-use bevy::asset::AssetServer;
+use bevy::asset::{AssetServer, Handle};
 use bevy::prelude::*;
-
-pub struct GameUiPlugin;
-
-impl Plugin for GameUiPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(
-            OnEnter(AppState::InGame),
-            (
-                spawn_scoreboard,
-                spawn_remaining_lives,
-                spawn_remaining_aliens,
-            ),
-        )
-        .add_systems(
-            Update,
-            (
-                update_scoreboard,
-                update_remaining_lives,
-                update_remaining_aliens,
-            )
-                .run_if(in_state(GameState::Running)),
-        );
-    }
-}
 
 #[derive(Component)]
 pub struct UiPlayerScore;

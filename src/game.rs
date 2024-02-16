@@ -1,13 +1,40 @@
 pub mod components;
-pub mod events;
 pub mod resources;
 pub mod systems;
 
-use crate::ui::*;
+pub mod aliens;
+pub mod lasers;
+pub mod player;
+pub mod shelters;
+
+use crate::game::aliens::AliensPlugin;
+use crate::game::lasers::LasersPlugin;
+use crate::game::player::PlayerPlugin;
+use crate::game::shelters::SheltersPlugin;
+use crate::{despawn_screen, AppState};
 use bevy::prelude::*;
 use components::*;
-use events::*;
 use systems::*;
+
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+pub enum GameState {
+    #[default]
+    Running,
+    Pause,
+    Transition,
+}
+
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+pub enum TransitionState {
+    #[default]
+    Unset,
+    PlayerKilled,
+    AliensKilled,
+    GameOver,
+}
+
+#[derive(Event)]
+pub struct GameOver;
 
 pub struct GamePlugin;
 
@@ -15,64 +42,22 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             OnEnter(AppState::InGame),
-            (
-                spawn_player,
-                spawn_floor,
-                spawn_shelters,
-                spawn_aliens,
-                play_main_music,
-                add_resources,
-            ),
+            (play_main_music, spawn_floor, add_resources),
         )
-        .add_event::<PlayerHit>()
-        .add_event::<AlienHit>()
-        .add_event::<LaserExplosion>()
+        .add_plugins(PlayerPlugin)
+        .add_plugins(AliensPlugin)
+        .add_plugins(LasersPlugin)
+        .add_plugins(SheltersPlugin)
+        .add_state::<GameState>()
         .add_event::<GameOver>()
-        .add_systems(Update, handle_input.run_if(in_state(AppState::InGame)))
         .add_systems(
             FixedUpdate,
-            (move_player, restrict_player_movement)
-                .chain()
-                .run_if(in_state(AppState::InGame)), // .run_if(in_state(GameState::Running)),
-        )
-        .add_systems(
-            FixedUpdate,
-            (move_aliens, alien_reach_floor)
-                .chain()
+            handle_game_over
                 .run_if(in_state(AppState::InGame))
                 .run_if(in_state(GameState::Running)),
         )
-        .add_systems(
-            FixedUpdate,
-            (move_lasers, despawn_lasers)
-                .chain()
-                .run_if(in_state(AppState::InGame))
-                .run_if(in_state(GameState::Running)),
-        )
-        .add_systems(
-            Update,
-            (
-                player_shoot,
-                aliens_shoot,
-                check_for_collisions,
-                shelter_hit,
-                spawn_ufo,
-                move_ufo,
-                handle_player_hit,
-                handle_alien_hit,
-                handle_game_over,
-                handle_laser_explosion,
-                update_xp_texts,
-            )
-                .run_if(in_state(AppState::InGame))
-                .run_if(in_state(GameState::Running)),
-        )
-        .add_systems(OnEnter(GameState::Pause), pause_setup)
-        .add_systems(OnExit(GameState::Pause), despawn_screen::<OnPauseScreen>)
         .add_systems(OnEnter(GameState::Transition), reset_transition_timer)
         .add_systems(Update, transition_delay.run_if(in_state(AppState::InGame)))
-        .add_systems(OnExit(TransitionState::PlayerKilled), spawn_player)
-        .add_systems(OnExit(TransitionState::AliensKilled), spawn_aliens)
         .add_systems(
             OnExit(AppState::InGame),
             (despawn_screen::<OnGameScreen>, reset_game_state),

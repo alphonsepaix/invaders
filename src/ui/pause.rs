@@ -1,39 +1,17 @@
-use crate::settings::*;
+pub mod systems;
+
+use crate::despawn_screen;
+use crate::game::GameState;
+use crate::AppState;
 use bevy::prelude::*;
+use systems::*;
 
-#[derive(Component)]
-pub struct OnPauseScreen;
+pub struct PausePlugin;
 
-pub fn pause_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands
-        .spawn((
-            NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(50.0),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::End,
-                    ..default()
-                },
-                ..default()
-            },
-            OnPauseScreen,
-        ))
-        .with_children(|parent| {
-            parent.spawn(TextBundle::from_sections([
-                TextSection::new(
-                    "Pause".to_uppercase(),
-                    TextStyle {
-                        font_size: SCOREBOARD_FONT_SIZE,
-                        color: TEXT_COLOR,
-                        font: asset_server.load("fonts/font.ttf"),
-                    },
-                ),
-                TextSection::from_style(TextStyle {
-                    font_size: SCOREBOARD_FONT_SIZE,
-                    color: TEXT_COLOR,
-                    ..default()
-                }),
-            ]));
-        });
+impl Plugin for PausePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(OnEnter(GameState::Pause), pause_setup)
+            .add_systems(Update, handle_input.run_if(in_state(AppState::InGame)))
+            .add_systems(OnExit(GameState::Pause), despawn_screen::<OnPauseScreen>);
+    }
 }

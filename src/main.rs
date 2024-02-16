@@ -7,6 +7,7 @@ use invaders::*;
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Invaders".into(),
@@ -20,14 +21,11 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins(MenuPlugin)
+        .add_plugins(UiPlugin)
         .add_plugins(GamePlugin)
-        .add_plugins(GameUiPlugin)
         .add_state::<AppState>()
-        .add_state::<GameState>()
         .add_state::<TransitionState>()
         .add_systems(Startup, (spawn_camera, add_resources))
-        .add_systems(Update, (make_visible, close_on_esc).chain())
-        .insert_resource(ClearColor(Color::BLACK))
+        .add_systems(Update, (make_visible, close_on_esc))
         .run();
 }

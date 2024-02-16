@@ -27,7 +27,6 @@ pub const UFO_SPEED: f32 = 150.0;
 
 pub const LASER_SIZE: Vec2 = Vec2::new(5.0, 15.0);
 pub const PLAYER_LASER_SPEED: f32 = 600.0;
-// pub const PLAYER_LASER_SPEED: f32 = 2800.0;
 pub const ALIEN_LASER_SPEED: f32 = 300.0;
 pub const MAX_ALIEN_LASERS: usize = 4;
 
