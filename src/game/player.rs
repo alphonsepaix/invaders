@@ -1,6 +1,7 @@
 pub mod systems;
 
-use crate::game::{GameState, TransitionState};
+use crate::game::transition::TransitionState;
+use crate::game::GameState;
 use crate::AppState;
 use bevy::prelude::*;
 use systems::*;

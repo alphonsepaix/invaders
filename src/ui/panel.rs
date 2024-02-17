@@ -6,6 +6,15 @@ use bevy::app::{App, Plugin, Update};
 use bevy::prelude::*;
 use systems::*;
 
+#[derive(Component)]
+pub struct UiPlayerScore;
+
+#[derive(Component)]
+pub struct UiLivesRemaining;
+
+#[derive(Component)]
+pub struct UiAliensRemaining;
+
 pub struct PanelPlugin;
 
 impl Plugin for PanelPlugin {

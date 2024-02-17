@@ -1,10 +1,12 @@
 use crate::game::aliens::{Alien, AlienHit, Ufo, XpTimer};
-use crate::game::resources::{
+use crate::game::lasers::Laser;
+use crate::game::transition::TransitionState;
+use crate::game::{EntityDirection, GameOver, GameState, OnGameScreen};
+use crate::get_window_resolution;
+use crate::resources::{
     AlienDirection, AlienSounds, AlienTimer, InvaderKilledSound, LivesRemaining, PlayerScore,
     UfoTimer,
 };
-use crate::game::{EntityDirection, GameOver, GameState, OnGameScreen, TransitionState};
-use crate::get_window_resolution;
 use crate::settings::{
     ALIENS_PER_LINE, ALIEN_LASER_SPEED, ALIEN_SHOOT_PROB, ALIEN_SIZE, ALIEN_TICK_DURATION,
     FLOOR_HEIGHT, LASER_SIZE, MARGIN, MAX_ALIEN_LASERS, SPACE_BETWEEN_ALIENS, UFO_SIZE,
@@ -23,7 +25,6 @@ use bevy::window::PrimaryWindow;
 use itertools::izip;
 use rand::random;
 use std::time::Duration;
-use crate::game::lasers::Laser;
 
 pub fn spawn_aliens(
     mut commands: Commands,

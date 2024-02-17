@@ -6,6 +6,18 @@ use crate::{despawn_screen, AppState};
 use bevy::prelude::*;
 use systems::*;
 
+#[derive(Component)]
+pub struct SelectedOption;
+
+#[derive(Component)]
+pub enum MenuButtonAction {
+    Play,
+    Quit,
+}
+
+#[derive(Component)]
+pub struct OnMenuScreen;
+
 pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {

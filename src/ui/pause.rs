@@ -6,6 +6,9 @@ use crate::AppState;
 use bevy::prelude::*;
 use systems::*;
 
+#[derive(Component)]
+pub struct OnPauseScreen;
+
 pub struct PausePlugin;
 
 impl Plugin for PausePlugin {

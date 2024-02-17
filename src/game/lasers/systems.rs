@@ -1,6 +1,7 @@
 use crate::game::aliens::{Alien, AlienHit, XpTimer};
 use crate::game::lasers::{ExplosionTimer, Laser, LaserExplosion};
 use crate::game::player::{Player, PlayerHit};
+use crate::game::{EntityDirection, OnGameScreen};
 use crate::settings::{
     ALIEN_SIZE, EXPLOSION_DURATION, EXPLOSION_MAX_RADIUS, EXPLOSION_MIN_RADIUS, FLOOR_HEIGHT,
     FLOOR_THICKNESS, LASER_SIZE, PLAYER_SIZE, XP_GAIN_DURATION,
@@ -14,7 +15,6 @@ use bevy::prelude::{
 };
 use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::PrimaryWindow;
-use crate::game::{EntityDirection, OnGameScreen};
 
 pub fn move_lasers(mut lasers_query: Query<(&mut Transform, &Laser)>, time: Res<Time>) {
     for (mut transform, Laser { direction, speed }) in lasers_query.iter_mut() {

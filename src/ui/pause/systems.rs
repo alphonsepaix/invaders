@@ -1,6 +1,7 @@
-use crate::game::resources::AlienTimer;
 use crate::game::GameState;
+use crate::resources::AlienTimer;
 use crate::settings::{SCOREBOARD_FONT_SIZE, TEXT_COLOR};
+use crate::ui::pause::*;
 use bevy::app::AppExit;
 use bevy::asset::AssetServer;
 use bevy::input::Input;
@@ -9,9 +10,6 @@ use bevy::prelude::{
     default, AlignItems, Commands, EventWriter, JustifyContent, KeyCode, NextState, NodeBundle,
     Res, ResMut, State, Style, TextBundle, TextSection, TextStyle, Val,
 };
-
-#[derive(Component)]
-pub struct OnPauseScreen;
 
 pub fn pause_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands

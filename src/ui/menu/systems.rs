@@ -1,23 +1,12 @@
-use crate::game::resources::{AlreadyPlayed, ButtonHoveredSound, ButtonPressedSound};
+use crate::resources::{AlreadyPlayed, ButtonHoveredSound, ButtonPressedSound};
 use crate::settings::{
     BUTTON_HEIGHT, BUTTON_MARGIN, BUTTON_WIDTH, HOVERED_BUTTON, HOVERED_PRESSED_BUTTON,
     MENU_TEXT_COLOR, MENU_TITLE_SIZE, NORMAL_BUTTON, PRESSED_BUTTON, TEXT_BUTTON_SIZE,
 };
+use crate::ui::menu::*;
 use crate::AppState;
 use bevy::app::AppExit;
 use bevy::prelude::*;
-
-#[derive(Component)]
-pub struct OnMenuScreen;
-
-#[derive(Component)]
-pub struct SelectedOption;
-
-#[derive(Component)]
-pub enum MenuButtonAction {
-    Play,
-    Quit,
-}
 
 pub fn menu_setup(
     mut commands: Commands,

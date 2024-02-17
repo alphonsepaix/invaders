@@ -1,6 +1,8 @@
+use crate::game::lasers::Laser;
 use crate::game::player::{Player, PlayerHit};
-use crate::game::resources::{ExplosionSound, LivesRemaining, ShootSound};
-use crate::game::{EntityDirection, GameOver, GameState, OnGameScreen, TransitionState};
+use crate::game::transition::TransitionState;
+use crate::game::{EntityDirection, GameOver, GameState, OnGameScreen};
+use crate::resources::{ExplosionSound, LivesRemaining, ShootSound};
 use crate::settings::{
     FLOOR_HEIGHT, FLOOR_THICKNESS, LASER_SIZE, PLAYER_LASER_SPEED, PLAYER_SIZE, PLAYER_SPEED,
 };
@@ -13,7 +15,6 @@ use bevy::prelude::{
     ResMut, Sprite, SpriteBundle, Time, Transform, Window, With, Without,
 };
 use bevy::window::PrimaryWindow;
-use crate::game::lasers::Laser;
 
 pub fn spawn_player(
     mut commands: Commands,

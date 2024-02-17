@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use crate::game::EntityDirection;
+use bevy::prelude::*;
 
 pub struct InvadersMovingSound {
     index: usize,

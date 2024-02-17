@@ -1,10 +1,11 @@
 pub mod systems;
 
-use crate::game::{EntityDirection, GameState, TransitionState};
+use crate::game::transition::TransitionState;
+use crate::game::{EntityDirection, GameState};
+use crate::settings::{GREEN_ALIEN_VALUE, RED_ALIEN_VALUE, UFO_VALUE, YELLOW_ALIEN_VALUE};
 use crate::AppState;
 use bevy::prelude::*;
 use systems::*;
-use crate::settings::{GREEN_ALIEN_VALUE, RED_ALIEN_VALUE, UFO_VALUE, YELLOW_ALIEN_VALUE};
 
 #[derive(Event)]
 pub struct AlienHit {

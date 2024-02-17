@@ -1,4 +1,6 @@
 use crate::game::lasers::{Laser, LaserExplosion};
+use crate::game::shelters::{Shelter, ShelterArmorText};
+use crate::game::OnGameScreen;
 use crate::settings::{
     FLOOR_HEIGHT, INITIAL_ARMOR_VALUE, LASER_SIZE, NUM_SHELTERS, PLAYER_SIZE, SHELTER_SCALE_FACTOR,
     SHELTER_SIZE,
@@ -10,8 +12,6 @@ use bevy::prelude::{
     Text, TextAlignment, TextBundle, TextStyle, Transform, Val, Window, With,
 };
 use bevy::window::PrimaryWindow;
-use crate::game::OnGameScreen;
-use crate::game::shelters::{Shelter, ShelterArmorText};
 
 pub fn spawn_shelters(
     mut commands: Commands,
