@@ -1,4 +1,3 @@
-pub mod components;
 pub mod resources;
 pub mod systems;
 
@@ -13,7 +12,6 @@ use crate::game::player::PlayerPlugin;
 use crate::game::shelters::SheltersPlugin;
 use crate::{despawn_screen, AppState};
 use bevy::prelude::*;
-use components::*;
 use systems::*;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -35,6 +33,28 @@ pub enum TransitionState {
 
 #[derive(Event)]
 pub struct GameOver;
+
+#[derive(Component)]
+pub struct OnGameScreen;
+
+#[derive(Clone, PartialEq)]
+pub enum EntityDirection {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+impl EntityDirection {
+    pub fn mask(&self) -> Vec3 {
+        match self {
+            EntityDirection::Up => Vec3::new(0.0, 1.0, 0.0),
+            EntityDirection::Down => Vec3::new(0.0, -1.0, 0.0),
+            EntityDirection::Left => Vec3::new(-1.0, 0.0, 0.0),
+            EntityDirection::Right => Vec3::new(1.0, 0.0, 0.0),
+        }
+    }
+}
 
 pub struct GamePlugin;
 

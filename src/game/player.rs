@@ -8,6 +8,9 @@ use systems::*;
 #[derive(Event)]
 pub struct PlayerHit;
 
+#[derive(Component)]
+pub struct Player;
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {

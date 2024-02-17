@@ -8,6 +8,9 @@ pub use pause::PausePlugin;
 
 use bevy::prelude::*;
 
+#[derive(Component)]
+pub struct OnMenuScreen;
+
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {

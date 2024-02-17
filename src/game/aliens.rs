@@ -1,10 +1,10 @@
 pub mod systems;
 
-use crate::game::components::Alien;
-use crate::game::{GameState, TransitionState};
+use crate::game::{EntityDirection, GameState, TransitionState};
 use crate::AppState;
 use bevy::prelude::*;
 use systems::*;
+use crate::settings::{GREEN_ALIEN_VALUE, RED_ALIEN_VALUE, UFO_VALUE, YELLOW_ALIEN_VALUE};
 
 #[derive(Event)]
 pub struct AlienHit {
@@ -12,6 +12,40 @@ pub struct AlienHit {
     pub id: Entity,
     pub position: Vec2,
 }
+
+#[derive(Component)]
+pub struct XpTimer(pub Timer);
+
+#[derive(Clone, Component)]
+pub enum Alien {
+    Yellow,
+    Green,
+    Red,
+    Ufo,
+}
+
+impl Alien {
+    pub fn color(&self) -> Color {
+        match self {
+            Alien::Yellow => Color::YELLOW,
+            Alien::Green => Color::GREEN,
+            Alien::Red => Color::RED,
+            Alien::Ufo => Color::RED,
+        }
+    }
+
+    pub fn value(&self) -> u32 {
+        match self {
+            Alien::Yellow => YELLOW_ALIEN_VALUE,
+            Alien::Green => GREEN_ALIEN_VALUE,
+            Alien::Red => RED_ALIEN_VALUE,
+            Alien::Ufo => UFO_VALUE,
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct Ufo(pub EntityDirection);
 
 pub struct AliensPlugin;
 

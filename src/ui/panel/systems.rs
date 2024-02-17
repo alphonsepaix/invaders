@@ -1,8 +1,10 @@
-use crate::game::components::{Alien, Laser, OnGameScreen, Ufo};
 use crate::game::resources::{LivesRemaining, PlayerScore};
 use crate::settings::{SCOREBOARD_FONT_SIZE, TEXT_COLOR};
 use bevy::asset::{AssetServer, Handle};
 use bevy::prelude::*;
+use crate::game::OnGameScreen;
+use crate::game::aliens::{Alien, Ufo};
+use crate::game::lasers::Laser;
 
 #[derive(Component)]
 pub struct UiPlayerScore;

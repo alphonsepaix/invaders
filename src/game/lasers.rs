@@ -1,12 +1,21 @@
 pub mod systems;
 
-use crate::game::GameState;
+use crate::game::{EntityDirection, GameState};
 use crate::AppState;
 use bevy::prelude::*;
 use systems::*;
 
 #[derive(Event)]
 pub struct LaserExplosion(pub Entity);
+
+#[derive(Component)]
+pub struct Laser {
+    pub direction: EntityDirection,
+    pub speed: f32,
+}
+
+#[derive(Component)]
+pub struct ExplosionTimer(pub Timer);
 
 pub struct LasersPlugin;
 

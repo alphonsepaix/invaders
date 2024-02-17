@@ -5,6 +5,14 @@ use crate::AppState;
 use bevy::prelude::*;
 use systems::*;
 
+#[derive(Component)]
+pub struct Shelter {
+    pub armor: u32,
+}
+
+#[derive(Component)]
+pub struct ShelterArmorText(pub Entity);
+
 pub struct SheltersPlugin;
 
 impl Plugin for SheltersPlugin {

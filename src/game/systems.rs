@@ -1,15 +1,15 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
-use crate::game::components::*;
 use crate::game::resources::*;
-use crate::game::{GameOver, GameState, TransitionState};
+use crate::game::{EntityDirection, GameOver, GameState, OnGameScreen, TransitionState};
 use crate::settings::*;
 use crate::*;
 use bevy::core::FrameCount;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use std::time::Duration;
+use crate::game::lasers::Laser;
 
 pub fn make_visible(mut window: Query<&mut Window>, frames: Res<FrameCount>) {
     if frames.0 == WINDOW_VISIBLE_DELAY {
