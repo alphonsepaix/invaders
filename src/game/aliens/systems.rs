@@ -8,8 +8,8 @@ use crate::resources::{
 };
 use crate::settings::{
     ALIENS_PER_LINE, ALIEN_LASER_SPEED, ALIEN_SHOOT_PROB, ALIEN_SIZE, ALIEN_TICK_DURATION,
-    FLOOR_HEIGHT, LASER_SIZE, MARGIN, MAX_ALIEN_LASERS, SPACE_BETWEEN_ALIENS, UFO_SIZE,
-    UFO_SPAWN_PROB, UFO_SPEED, XP_GAIN_DURATION,
+    FLOOR_HEIGHT, FLOOR_THICKNESS, LASER_SIZE, MARGIN, MAX_ALIEN_LASERS, SPACE_BETWEEN_ALIENS,
+    UFO_SIZE, UFO_SPAWN_PROB, UFO_SPEED, XP_GAIN_DURATION,
 };
 use bevy::asset::{AssetServer, Handle};
 use bevy::audio::{AudioBundle, PlaybackSettings};
@@ -173,7 +173,7 @@ pub fn alien_reach_floor(
     aliens_query: Query<&Transform, (With<Alien>, Without<Laser>)>,
 ) {
     for alien_transform in aliens_query.iter() {
-        if alien_transform.translation.y < FLOOR_HEIGHT {
+        if alien_transform.translation.y - ALIEN_SIZE.y / 2.0 < FLOOR_HEIGHT + FLOOR_THICKNESS {
             game_over_event_writer.send(GameOver);
         }
     }

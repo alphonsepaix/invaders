@@ -34,6 +34,8 @@ pub fn despawn_screen<T: Component>(mut commands: Commands, entities: Query<Enti
 }
 
 pub fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(ClearColor(BACKGROUND_COLOR));
+
     commands.insert_resource(ButtonHoveredSound(asset_server.load("audio/hovered.ogg")));
     commands.insert_resource(ButtonPressedSound(asset_server.load("audio/pressed.ogg")));
 

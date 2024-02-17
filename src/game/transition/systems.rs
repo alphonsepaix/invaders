@@ -36,14 +36,15 @@ pub fn set_transition_state(
     if timer.tick(time.delta()).finished() {
         if aliens_query.is_empty() {
             next_transition_state.set(TransitionState::AliensKilled);
-        }
-        if player_query.is_empty() {
+        } else if player_query.is_empty() {
             if remaining_lives.0 == 0 {
-                next_app_state.set(AppState::Menu);
                 resume_game = false;
             } else {
                 next_transition_state.set(TransitionState::SpawnPlayer);
             }
+        } else {
+            // Aliens reach the floor.
+            resume_game = false;
         }
         if resume_game {
             next_game_state.set(GameState::Running);
