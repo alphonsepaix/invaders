@@ -1,6 +1,5 @@
 use crate::game::lasers::Laser;
 use crate::game::player::{Player, PlayerHit};
-use crate::game::transition::TransitionState;
 use crate::game::{EntityDirection, GameOver, GameState, OnGameScreen};
 use crate::resources::{ExplosionSound, LivesRemaining, ShootSound};
 use crate::settings::{
@@ -119,7 +118,6 @@ pub fn handle_player_hit(
     explosion_sound: Res<ExplosionSound>,
     mut lives_remaining: ResMut<LivesRemaining>,
     mut next_game_state: ResMut<NextState<GameState>>,
-    mut next_transition_state: ResMut<NextState<TransitionState>>,
 ) {
     if player_hit_event_reader.read().next().is_some() {
         if let Ok(player_entity) = player_query.get_single() {
@@ -136,7 +134,6 @@ pub fn handle_player_hit(
 
             if lives_remaining.0 > 0 {
                 next_game_state.set(GameState::Transition);
-                next_transition_state.set(TransitionState::PlayerKilled);
             } else {
                 // Game over.
                 game_over_event_writer.send(GameOver);

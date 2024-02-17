@@ -1,5 +1,3 @@
-#![allow(clippy::type_complexity)]
-
 pub mod systems;
 
 use crate::{despawn_screen, AppState};

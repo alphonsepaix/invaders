@@ -1,6 +1,5 @@
 use crate::game::aliens::{Alien, AlienHit, Ufo, XpTimer};
 use crate::game::lasers::Laser;
-use crate::game::transition::TransitionState;
 use crate::game::{EntityDirection, GameOver, GameState, OnGameScreen};
 use crate::get_window_resolution;
 use crate::resources::{
@@ -183,14 +182,13 @@ pub fn alien_reach_floor(
 pub fn handle_alien_hit(
     mut commands: Commands,
     mut alien_hit_event_reader: EventReader<AlienHit>,
-    aliens_query: Query<&Alien, Without<Laser>>,
+    aliens_query: Query<&Alien, (Without<Laser>, Without<Ufo>)>,
     asset_server: Res<AssetServer>,
     invader_killed_sound: Res<InvaderKilledSound>,
     mut alien_timer: ResMut<AlienTimer>,
     mut lives_remaining: ResMut<LivesRemaining>,
     mut score: ResMut<PlayerScore>,
     mut next_game_state: ResMut<NextState<GameState>>,
-    mut next_transition_state: ResMut<NextState<TransitionState>>,
 ) {
     if let Some(AlienHit {
         alien_type,
@@ -238,7 +236,6 @@ pub fn handle_alien_hit(
             let aliens_remaining = aliens_query.iter().count() - 1;
             if aliens_remaining == 0 {
                 next_game_state.set(GameState::Transition);
-                next_transition_state.set(TransitionState::AliensKilled);
                 if lives_remaining.0 < 5 {
                     lives_remaining.0 += 1;
                 }

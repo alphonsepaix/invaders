@@ -1,6 +1,5 @@
 pub mod systems;
 
-use crate::game::transition::TransitionState;
 use crate::game::{EntityDirection, GameState};
 use crate::settings::{GREEN_ALIEN_VALUE, RED_ALIEN_VALUE, UFO_VALUE, YELLOW_ALIEN_VALUE};
 use crate::AppState;
@@ -56,17 +55,16 @@ impl Plugin for AliensPlugin {
             .add_systems(OnEnter(AppState::InGame), spawn_aliens)
             .add_systems(
                 FixedUpdate,
-                (move_aliens, alien_reach_floor)
+                (move_aliens, aliens_shoot, alien_reach_floor)
                     .chain()
                     .run_if(in_state(AppState::InGame))
                     .run_if(in_state(GameState::Running)),
             )
             .add_systems(
                 Update,
-                (aliens_shoot, spawn_ufo, move_ufo, handle_alien_hit)
+                (spawn_ufo, move_ufo, handle_alien_hit)
                     .run_if(in_state(AppState::InGame))
-                    .run_if(in_state(GameState::Running)),
-            )
-            .add_systems(OnExit(TransitionState::AliensKilled), spawn_aliens);
+                    .run_if(not(in_state(GameState::Pause))),
+            );
     }
 }

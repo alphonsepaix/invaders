@@ -1,3 +1,4 @@
+use crate::game::GameState;
 use crate::resources::{AlreadyPlayed, ButtonHoveredSound, ButtonPressedSound};
 use crate::settings::{
     BUTTON_HEIGHT, BUTTON_MARGIN, BUTTON_WIDTH, HOVERED_BUTTON, HOVERED_PRESSED_BUTTON,
@@ -141,12 +142,16 @@ pub fn menu_action(
         (Changed<Interaction>, With<Button>),
     >,
     mut app_exit_events: EventWriter<AppExit>,
-    mut game_state: ResMut<NextState<AppState>>,
+    mut app_state: ResMut<NextState<AppState>>,
+    mut game_state: ResMut<NextState<GameState>>,
 ) {
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
             match menu_button_action {
-                MenuButtonAction::Play => game_state.set(AppState::InGame),
+                MenuButtonAction::Play => {
+                    app_state.set(AppState::InGame);
+                    game_state.set(GameState::Running);
+                }
                 MenuButtonAction::Quit => app_exit_events.send(AppExit),
             }
         }

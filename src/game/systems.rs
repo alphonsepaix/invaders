@@ -1,7 +1,3 @@
-#![allow(clippy::type_complexity)]
-#![allow(clippy::too_many_arguments)]
-
-use crate::game::transition::TransitionState;
 use crate::game::{GameOver, GameState, OnGameScreen};
 use crate::resources::*;
 use crate::settings::*;
@@ -37,12 +33,10 @@ pub fn spawn_floor(mut commands: Commands) {
 pub fn handle_game_over(
     mut game_over_event_reader: EventReader<GameOver>,
     mut next_game_state: ResMut<NextState<GameState>>,
-    mut next_transition_state: ResMut<NextState<TransitionState>>,
     mut already_played: ResMut<AlreadyPlayed>,
 ) {
     if game_over_event_reader.read().next().is_some() {
         next_game_state.set(GameState::Transition);
-        next_transition_state.set(TransitionState::GameOver);
         already_played.0 = true;
     }
 }

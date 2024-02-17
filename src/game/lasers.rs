@@ -32,7 +32,7 @@ impl Plugin for LasersPlugin {
             )
                 .chain()
                 .run_if(in_state(AppState::InGame))
-                .run_if(in_state(GameState::Running)),
+                .run_if(not(in_state(GameState::Pause))),
         );
     }
 }

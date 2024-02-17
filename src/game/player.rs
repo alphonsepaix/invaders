@@ -1,6 +1,5 @@
 pub mod systems;
 
-use crate::game::transition::TransitionState;
 use crate::game::GameState;
 use crate::AppState;
 use bevy::prelude::*;
@@ -23,14 +22,13 @@ impl Plugin for PlayerPlugin {
                 (move_player, restrict_player_movement)
                     .chain()
                     .run_if(in_state(AppState::InGame))
-                    .run_if(in_state(GameState::Running)),
+                    .run_if(not(in_state(GameState::Pause))),
             )
             .add_systems(
                 Update,
                 (player_shoot, handle_player_hit)
                     .run_if(in_state(AppState::InGame))
-                    .run_if(in_state(GameState::Running)),
-            )
-            .add_systems(OnExit(TransitionState::PlayerKilled), spawn_player);
+                    .run_if(not(in_state(GameState::Pause))),
+            );
     }
 }
