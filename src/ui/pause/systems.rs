@@ -13,30 +13,24 @@ pub fn pause_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             NodeBundle {
                 style: Style {
                     width: Val::Percent(100.0),
-                    height: Val::Percent(50.0),
+                    height: Val::Percent(100.0),
                     justify_content: JustifyContent::Center,
-                    align_items: AlignItems::End,
+                    align_items: AlignItems::Center,
                     ..default()
                 },
+                background_color: BackgroundColor(Color::rgba(0.0, 0.0, 0.0, 0.7)),
                 ..default()
             },
             OnPauseScreen,
         ))
         .with_children(|parent| {
-            parent.spawn(TextBundle::from_sections([
-                TextSection::new(
-                    "Pause".to_uppercase(),
-                    TextStyle {
-                        font_size: SCOREBOARD_FONT_SIZE,
-                        color: TEXT_COLOR,
-                        font: asset_server.load("fonts/font.ttf"),
-                    },
-                ),
-                TextSection::from_style(TextStyle {
+            parent.spawn(TextBundle::from_sections([TextSection::new(
+                "Pause".to_uppercase(),
+                TextStyle {
                     font_size: SCOREBOARD_FONT_SIZE,
                     color: TEXT_COLOR,
-                    ..default()
-                }),
-            ]));
+                    font: asset_server.load("fonts/font.ttf"),
+                },
+            )]));
         });
 }
