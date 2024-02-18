@@ -30,7 +30,7 @@ pub fn spawn_shelters(
     let mut translation = Vec3::new(
         space_between_shelters + shelter_size.x / 2.0,
         height_below_shelter,
-        0.0,
+        1.0,
     );
 
     for _ in 0..NUM_SHELTERS {

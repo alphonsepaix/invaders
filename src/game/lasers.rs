@@ -21,18 +21,19 @@ pub struct LasersPlugin;
 
 impl Plugin for LasersPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<LaserExplosion>().add_systems(
-            FixedUpdate,
-            (
-                move_lasers,
-                despawn_lasers,
-                handle_laser_explosion,
-                check_for_collisions,
-                update_xp_texts,
+        app.add_event::<LaserExplosion>()
+            .add_systems(
+                Update,
+                (move_lasers, despawn_lasers, check_for_collisions)
+                    .chain()
+                    .run_if(in_state(AppState::InGame))
+                    .run_if(not(in_state(GameState::Pause))),
             )
-                .chain()
-                .run_if(in_state(AppState::InGame))
-                .run_if(not(in_state(GameState::Pause))),
-        );
+            .add_systems(
+                Update,
+                (handle_laser_explosion, update_xp_texts)
+                    .run_if(in_state(AppState::InGame))
+                    .run_if(not(in_state(GameState::Pause))),
+            );
     }
 }

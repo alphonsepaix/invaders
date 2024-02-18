@@ -7,6 +7,7 @@ use crate::game::{EntityDirection, GameState};
 use crate::resources::*;
 use crate::settings::*;
 use bevy::app::AppExit;
+use bevy::audio::{PlaybackMode, Volume, VolumeLevel};
 use bevy::core::FrameCount;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
@@ -92,7 +93,11 @@ pub fn play_main_music(
         commands.spawn((
             AudioBundle {
                 source: music,
-                settings: PlaybackSettings::LOOP,
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Loop,
+                    volume: Volume::Relative(VolumeLevel::new(0.5)),
+                    ..default()
+                },
             },
             MainMusic,
         ));
@@ -119,17 +124,23 @@ pub fn handle_input(
     if let AppState::InGame = current_app_state.get() {
         // Pause or unpause the game if the user is currently playing.
         if keyboard_input.just_pressed(KeyCode::P) {
-            for sink in sinks_query.iter() {
-                // Toggle all sounds.
-                sink.toggle();
-            }
-            let current_game_state = current_game_state.get();
-            if let GameState::Running = current_game_state {
-                next_state.set(GameState::Pause);
-                alien_timer.pause();
-            } else if let GameState::Pause = current_game_state {
-                next_state.set(GameState::Running);
-                alien_timer.unpause();
+            let (next_game_state, toggle) = match current_game_state.get() {
+                GameState::Running => {
+                    alien_timer.pause();
+                    (GameState::Pause, true)
+                }
+                GameState::Pause => {
+                    alien_timer.unpause();
+                    (GameState::Running, true)
+                }
+                other => (*other, false),
+            };
+            next_state.set(next_game_state);
+            if toggle {
+                for sink in sinks_query.iter() {
+                    // Toggle all sounds.
+                    sink.toggle();
+                }
             }
         }
     }

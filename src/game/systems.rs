@@ -20,7 +20,7 @@ pub fn spawn_floor(mut commands: Commands) {
                 ..default()
             },
             transform: Transform {
-                translation: Vec3::new(window_width / 2.0, FLOOR_HEIGHT, 0.0),
+                translation: Vec3::new(window_width / 2.0, FLOOR_HEIGHT, 1.0),
                 scale: Vec3::new(window_width, FLOOR_THICKNESS, 0.0),
                 ..default()
             },

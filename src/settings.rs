@@ -37,7 +37,7 @@ pub const EXPLOSION_MAX_RADIUS: f32 = 30.0;
 pub const XP_GAIN_DURATION: f32 = 1.0;
 
 pub const FLOOR_HEIGHT: f32 = 50.0;
-pub const FLOOR_THICKNESS: f32 = 8.0;
+pub const FLOOR_THICKNESS: f32 = 12.0;
 
 pub const BACKGROUND_COLOR: Color = Color::BLACK;
 pub const SCOREBOARD_FONT_SIZE: f32 = 28.0;

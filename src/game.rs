@@ -29,7 +29,7 @@ pub struct GameOver;
 #[derive(Component)]
 pub struct OnGameScreen;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum EntityDirection {
     Up,
     Down,

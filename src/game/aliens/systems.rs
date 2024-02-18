@@ -12,7 +12,7 @@ use crate::settings::{
     UFO_SIZE, UFO_SPAWN_PROB, UFO_SPEED, XP_GAIN_DURATION,
 };
 use bevy::asset::{AssetServer, Handle};
-use bevy::audio::{AudioBundle, PlaybackSettings};
+use bevy::audio::{AudioBundle, PlaybackMode, PlaybackSettings, Volume, VolumeLevel};
 use bevy::hierarchy::{BuildChildren, DespawnRecursiveExt};
 use bevy::math::Vec3;
 use bevy::prelude::{
@@ -91,7 +91,11 @@ pub fn move_aliens(
         if aliens_query.iter().count() > 0 {
             commands.spawn(AudioBundle {
                 source: sounds.get(),
-                settings: PlaybackSettings::ONCE,
+                settings: PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    volume: Volume::Relative(VolumeLevel::new(0.7)),
+                    ..default()
+                },
             });
         }
 
@@ -298,7 +302,11 @@ pub fn spawn_ufo(
                 .with_children(|parent| {
                     parent.spawn(AudioBundle {
                         source: asset_server.load("audio/ufo_highpitch.ogg"),
-                        settings: PlaybackSettings::LOOP,
+                        settings: PlaybackSettings {
+                            mode: PlaybackMode::Loop,
+                            volume: Volume::Relative(VolumeLevel::new(0.6)),
+                            ..default()
+                        },
                     });
                 });
         }
