@@ -2,11 +2,10 @@ pub mod menu;
 pub mod panel;
 pub mod pause;
 
+use bevy::prelude::*;
 pub use menu::MenuPlugin;
 pub use panel::PanelPlugin;
 pub use pause::PausePlugin;
-
-use bevy::prelude::*;
 
 pub struct UiPlugin;
 

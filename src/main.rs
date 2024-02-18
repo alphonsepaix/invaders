@@ -24,6 +24,9 @@ fn main() {
         .add_plugins(GamePlugin)
         .add_state::<AppState>()
         .add_systems(Startup, (spawn_camera, add_resources))
-        .add_systems(Update, (make_visible, play_main_music, close_on_esc))
+        .add_systems(
+            Update,
+            (make_visible, play_main_music, handle_input, close_on_esc),
+        )
         .run();
 }

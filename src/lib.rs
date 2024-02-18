@@ -3,9 +3,10 @@ pub mod resources;
 pub mod settings;
 pub mod ui;
 
-use crate::game::EntityDirection;
+use crate::game::{EntityDirection, GameState};
 use crate::resources::*;
 use crate::settings::*;
+use bevy::app::AppExit;
 use bevy::core::FrameCount;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
@@ -18,6 +19,9 @@ pub enum AppState {
     Pause,
     InGame,
 }
+
+#[derive(Component)]
+pub struct MainMusic;
 
 pub fn get_window_resolution() -> Vec2 {
     let width = 2.0 * MARGIN
@@ -85,10 +89,13 @@ pub fn play_main_music(
 ) {
     if frames.0 == WINDOW_VISIBLE_DELAY {
         let music = asset_server.load("audio/spaceinvaders.ogg");
-        commands.spawn(AudioBundle {
-            source: music,
-            settings: PlaybackSettings::LOOP,
-        });
+        commands.spawn((
+            AudioBundle {
+                source: music,
+                settings: PlaybackSettings::LOOP,
+            },
+            MainMusic,
+        ));
     }
 }
 
@@ -98,4 +105,37 @@ pub fn spawn_camera(mut commands: Commands, window_query: Query<&Window, With<Pr
         transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.0),
         ..default()
     });
+}
+
+pub fn handle_input(
+    mut app_exit_event_writer: EventWriter<AppExit>,
+    sinks_query: Query<&AudioSink>,
+    keyboard_input: Res<Input<KeyCode>>,
+    current_app_state: Res<State<AppState>>,
+    current_game_state: Res<State<GameState>>,
+    mut alien_timer: ResMut<AlienTimer>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if let AppState::InGame = current_app_state.get() {
+        // Pause or unpause the game if the user is currently playing.
+        if keyboard_input.just_pressed(KeyCode::P) {
+            for sink in sinks_query.iter() {
+                // Toggle all sounds.
+                sink.toggle();
+            }
+            let current_game_state = current_game_state.get();
+            if let GameState::Running = current_game_state {
+                next_state.set(GameState::Pause);
+                alien_timer.pause();
+            } else if let GameState::Pause = current_game_state {
+                next_state.set(GameState::Running);
+                alien_timer.unpause();
+            }
+        }
+    }
+
+    // Quit the app.
+    if keyboard_input.just_pressed(KeyCode::Q) {
+        app_exit_event_writer.send(AppExit);
+    }
 }
