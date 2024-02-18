@@ -25,7 +25,6 @@ pub fn move_lasers(mut lasers_query: Query<(&mut Transform, &Laser)>, time: Res<
 }
 
 pub fn despawn_lasers(
-    // mut commands: Commands,
     mut laser_explosion_event_writer: EventWriter<LaserExplosion>,
     lasers_query: Query<(Entity, &Transform), With<Laser>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
@@ -102,7 +101,6 @@ pub fn handle_laser_explosion(
 }
 
 pub fn check_for_collisions(
-    // mut commands: Commands,
     mut alien_hit_event_writer: EventWriter<AlienHit>,
     mut player_hit_event_writer: EventWriter<PlayerHit>,
     mut laser_explosion_event_writer: EventWriter<LaserExplosion>,

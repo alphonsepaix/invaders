@@ -273,7 +273,7 @@ pub fn spawn_ufo(
             let window = window_query.single();
 
             let y = window.height() - UFO_SIZE.y;
-            let (direction, spawn_position) = if random::<f32>() > 0.5 {
+            let (direction, spawn_position) = if random() {
                 let dir = EntityDirection::Left;
                 // Spawn at the right edge of the window (with a little margin).
                 let spawn = Vec3::new(window.width() + UFO_SIZE.x, y, 0.0);
