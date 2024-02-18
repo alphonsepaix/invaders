@@ -3,23 +3,15 @@ use crate::game::lasers::Laser;
 use crate::game::{EntityDirection, GameOver, GameState, OnGameScreen};
 use crate::get_window_resolution;
 use crate::resources::{
-    AlienDirection, AlienSounds, AlienTimer, InvaderKilledSound, LivesRemaining, PlayerScore,
-    UfoTimer,
+    AlienDirection, AlienSounds, AlienTimer, AlienTimerDuration, InvaderKilledSound,
+    LivesRemaining, PlayerScore, UfoTimer,
 };
-use crate::settings::{
-    ALIENS_PER_LINE, ALIEN_LASER_SPEED, ALIEN_SHOOT_PROB, ALIEN_SIZE, ALIEN_TICK_DURATION,
-    FLOOR_HEIGHT, FLOOR_THICKNESS, LASER_SIZE, MARGIN, MAX_ALIEN_LASERS, SPACE_BETWEEN_ALIENS,
-    UFO_SIZE, UFO_SPAWN_PROB, UFO_SPEED, XP_GAIN_DURATION,
-};
+use crate::settings::*;
 use bevy::asset::{AssetServer, Handle};
 use bevy::audio::{AudioBundle, PlaybackMode, PlaybackSettings, Volume, VolumeLevel};
 use bevy::hierarchy::{BuildChildren, DespawnRecursiveExt};
 use bevy::math::Vec3;
-use bevy::prelude::{
-    default, Color, Commands, Entity, EventReader, EventWriter, Image, NextState, PositionType,
-    Query, Res, ResMut, Sprite, SpriteBundle, Style, TextAlignment, TextBundle, TextStyle, Time,
-    Timer, TimerMode, Transform, Val, Window, With, Without,
-};
+use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use itertools::izip;
 use rand::random;
@@ -29,6 +21,7 @@ pub fn spawn_aliens(
     mut commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
     asset_server: Res<AssetServer>,
+    alien_timer_duration: Res<AlienTimerDuration>,
     mut alien_timer: ResMut<AlienTimer>,
 ) {
     let window = window_query.single();
@@ -66,7 +59,7 @@ pub fn spawn_aliens(
     }
 
     // Reset the timer.
-    alien_timer.set_duration(Duration::from_secs_f32(ALIEN_TICK_DURATION));
+    alien_timer.set_duration(alien_timer_duration.0);
 }
 
 pub fn move_aliens(
@@ -190,6 +183,7 @@ pub fn handle_alien_hit(
     asset_server: Res<AssetServer>,
     invader_killed_sound: Res<InvaderKilledSound>,
     mut alien_timer: ResMut<AlienTimer>,
+    mut alien_timer_duration: ResMut<AlienTimerDuration>,
     mut lives_remaining: ResMut<LivesRemaining>,
     mut score: ResMut<PlayerScore>,
     mut next_game_state: ResMut<NextState<GameState>>,
@@ -242,6 +236,10 @@ pub fn handle_alien_hit(
                 next_game_state.set(GameState::Transition);
                 if lives_remaining.0 < 5 {
                     lives_remaining.0 += 1;
+                    // 10% speed increase.
+                    let duration = alien_timer_duration.0.as_secs_f32() * 0.90;
+                    info!("Setting new alien timer duration: {duration}");
+                    alien_timer_duration.0 = Duration::from_secs_f32(duration);
                 }
             } else if aliens_remaining < 25 {
                 // If there are less than 25 aliens remaining, increase their speed

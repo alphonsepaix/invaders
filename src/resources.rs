@@ -1,5 +1,6 @@
 use crate::game::EntityDirection;
 use bevy::prelude::*;
+use std::time::Duration;
 
 pub struct InvadersMovingSound {
     index: usize,
@@ -47,6 +48,9 @@ pub struct AlienSounds(pub InvadersMovingSound);
 
 #[derive(Deref, DerefMut, Resource)]
 pub struct AlienTimer(pub Timer);
+
+#[derive(Deref, DerefMut, Resource)]
+pub struct AlienTimerDuration(pub Duration);
 
 #[derive(Deref, DerefMut, Resource)]
 pub struct UfoTimer(pub Timer);

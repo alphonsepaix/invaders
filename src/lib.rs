@@ -73,6 +73,9 @@ pub fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
         ALIEN_TICK_DURATION,
         TimerMode::Repeating,
     )));
+    commands.insert_resource(AlienTimerDuration(Duration::from_secs_f32(
+        ALIEN_TICK_DURATION,
+    )));
     commands.insert_resource(UfoTimer(Timer::from_seconds(1.0, TimerMode::Repeating)));
 
     commands.insert_resource(AlienDirection {
