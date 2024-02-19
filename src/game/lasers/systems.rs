@@ -14,7 +14,13 @@ use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::PrimaryWindow;
 
 pub fn move_lasers(mut lasers_query: Query<(&mut Transform, &Laser)>, time: Res<Time>) {
-    for (mut transform, Laser { direction, speed }) in lasers_query.iter_mut() {
+    for (
+        mut transform,
+        Laser {
+            direction, speed, ..
+        },
+    ) in lasers_query.iter_mut()
+    {
         let movement = match direction {
             EntityDirection::Up => Vec3::new(0.0, 1.0, 0.0),
             EntityDirection::Down => Vec3::new(0.0, -1.0, 0.0),

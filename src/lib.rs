@@ -92,7 +92,7 @@ pub fn play_main_music(
     frames: Res<FrameCount>,
 ) {
     if frames.0 == WINDOW_VISIBLE_DELAY {
-        let music = asset_server.load("audio/spaceinvaders.ogg");
+        let music = asset_server.load("audio/music.ogg");
         commands.spawn((
             AudioBundle {
                 source: music,

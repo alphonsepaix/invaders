@@ -12,6 +12,7 @@ pub struct LaserExplosion(pub Entity);
 pub struct Laser {
     pub direction: EntityDirection,
     pub speed: f32,
+    pub source: Option<Entity>,
 }
 
 #[derive(Component)]

@@ -55,13 +55,19 @@ impl Plugin for AliensPlugin {
             .add_systems(OnEnter(AppState::InGame), spawn_aliens)
             .add_systems(
                 FixedUpdate,
-                (move_aliens, aliens_shoot, alien_reach_floor)
+                (move_aliens, alien_reach_floor)
                     .chain()
                     .run_if(in_state(AppState::InGame))
                     .run_if(in_state(GameState::Running)),
             )
             .add_systems(
                 Update,
+                aliens_shoot
+                    .run_if(in_state(AppState::InGame))
+                    .run_if(in_state(GameState::Running)),
+            )
+            .add_systems(
+                FixedUpdate,
                 (spawn_ufo, move_ufo, handle_alien_hit)
                     .run_if(in_state(AppState::InGame))
                     .run_if(not(in_state(GameState::Pause))),

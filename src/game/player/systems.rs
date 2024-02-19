@@ -98,6 +98,7 @@ pub fn player_shoot(
                 Laser {
                     direction: EntityDirection::Up,
                     speed: PLAYER_LASER_SPEED,
+                    source: None,
                 },
                 Player,
                 OnGameScreen,

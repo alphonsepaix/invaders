@@ -2,10 +2,7 @@ use crate::game::aliens::{Alien, AlienHit, Ufo, XpTimer};
 use crate::game::lasers::Laser;
 use crate::game::{EntityDirection, GameOver, GameState, OnGameScreen};
 use crate::get_window_resolution;
-use crate::resources::{
-    AlienDirection, AlienSounds, AlienTimer, AlienTimerDuration, InvaderKilledSound,
-    LivesRemaining, PlayerScore, UfoTimer,
-};
+use crate::resources::*;
 use crate::settings::*;
 use bevy::asset::{AssetServer, Handle};
 use bevy::audio::{AudioBundle, PlaybackMode, PlaybackSettings, Volume, VolumeLevel};
@@ -31,7 +28,7 @@ pub fn spawn_aliens(
         asset_server.load("sprites/green.png"),
         asset_server.load("sprites/red.png"),
     ];
-    let lines = [1_usize, 2, 2];
+    let lines = [NUM_YELLOW, NUM_GREEN, NUM_RED];
     let alien_types = [Alien::Yellow, Alien::Green, Alien::Red];
 
     let mut direction = Vec3::new(SPACE_BETWEEN_ALIENS.x + ALIEN_SIZE.x, 0.0, 0.0);
@@ -39,7 +36,7 @@ pub fn spawn_aliens(
 
     for (sprite, lines, alien_type) in izip!(sprites, lines, alien_types) {
         for _ in 0..lines {
-            for j in 0..11 {
+            for j in 0..ALIENS_PER_LINE {
                 commands.spawn((
                     SpriteBundle {
                         texture: sprite.clone(),
@@ -121,17 +118,24 @@ pub fn move_aliens(
 
 pub fn aliens_shoot(
     mut commands: Commands,
-    aliens_query: Query<(&Transform, &Alien), Without<Ufo>>,
+    aliens_query: Query<(Entity, &Transform, &Alien), Without<Ufo>>,
     lasers_query: Query<&Laser, With<Alien>>,
 ) {
     let mut laser_count = lasers_query.iter().count();
+    let total_aliens = ALIENS_PER_LINE * (NUM_GREEN + NUM_RED + NUM_YELLOW);
+    let scaling_factor = aliens_query.iter().count() as f32 / total_aliens as f32;
 
-    for (alien_transform, alien_type) in aliens_query.iter() {
-        if laser_count == MAX_ALIEN_LASERS {
+    for (alien_entity, alien_transform, alien_type) in aliens_query.iter() {
+        if laser_count == MAX_ALIEN_LASERS
+            || lasers_query
+                .iter()
+                .filter_map(|&Laser { source, .. }| source)
+                .any(|source_entity| source_entity == alien_entity)
+        {
             break;
         }
 
-        if random::<f32>() < ALIEN_SHOOT_PROB {
+        if random::<f32>() * scaling_factor < ALIEN_SHOOT_PROB {
             let translation = alien_transform.translation;
             let half_alien_height = ALIEN_SIZE.y / 2.0;
 
@@ -155,6 +159,7 @@ pub fn aliens_shoot(
                 Laser {
                     direction: EntityDirection::Down,
                     speed: ALIEN_LASER_SPEED,
+                    source: Some(alien_entity),
                 },
                 alien_type.clone(),
                 OnGameScreen,

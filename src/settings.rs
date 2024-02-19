@@ -11,9 +11,12 @@ pub const SHELTER_SCALE_FACTOR: f32 = 2.5;
 pub const INITIAL_ARMOR_VALUE: u32 = 100;
 
 pub const ALIENS_PER_LINE: usize = 11;
+pub const NUM_YELLOW: usize = 1_usize;
+pub const NUM_GREEN: usize = 2;
+pub const NUM_RED: usize = 2;
 pub const SPACE_BETWEEN_ALIENS: Vec2 = Vec2::new(20.0, 16.0);
 pub const MARGIN: f32 = 80.0;
-pub const ALIEN_SHOOT_PROB: f32 = 1.0 / 40.0 / 60.0;
+pub const ALIEN_SHOOT_PROB: f32 = 1.0 / 40.0 / 30.0;
 pub const ALIEN_SIZE: Vec2 = Vec2::new(40.0, 30.0);
 pub const YELLOW_ALIEN_VALUE: u32 = 30;
 pub const GREEN_ALIEN_VALUE: u32 = 20;
