@@ -4,52 +4,55 @@ use crate::game::OnGameScreen;
 use crate::resources::{LivesRemaining, PlayerScore};
 use crate::settings::{SCOREBOARD_FONT_SIZE, TEXT_COLOR};
 use crate::ui::panel::*;
-use bevy::asset::{AssetServer, Handle};
+use bevy::asset::AssetServer;
 use bevy::prelude::*;
 
 pub fn spawn_scoreboard(commands: Commands, asset_server: Res<AssetServer>) {
-    let style = Style {
-        width: Val::Percent(100.0),
-        height: Val::Percent(100.0),
-        justify_content: JustifyContent::Start,
-        align_items: AlignItems::End,
-        ..default()
-    };
-    let font = asset_server.load("fonts/font.ttf");
-    spawn_text(commands, style, "Score=", UiPlayerScore, font);
+    spawn_text(
+        commands,
+        JustifyContent::Start,
+        "Score=",
+        UiPlayerScore,
+        asset_server,
+    );
 }
 
 pub fn spawn_remaining_lives(commands: Commands, asset_server: Res<AssetServer>) {
-    let style = Style {
-        width: Val::Percent(100.0),
-        height: Val::Percent(100.0),
-        justify_content: JustifyContent::End,
-        align_items: AlignItems::End,
-        ..default()
-    };
-    let font = asset_server.load("fonts/font.ttf");
-    spawn_text(commands, style, "Lives=", UiLivesRemaining, font);
+    spawn_text(
+        commands,
+        JustifyContent::End,
+        "Lives=",
+        UiLivesRemaining,
+        asset_server,
+    );
 }
 
 pub fn spawn_remaining_aliens(commands: Commands, asset_server: Res<AssetServer>) {
-    let style = Style {
-        width: Val::Percent(100.0),
-        height: Val::Percent(100.0),
-        justify_content: JustifyContent::Center,
-        align_items: AlignItems::End,
-        ..default()
-    };
-    let font = asset_server.load("fonts/font.ttf");
-    spawn_text(commands, style, "Aliens=", UiAliensRemaining, font);
+    spawn_text(
+        commands,
+        JustifyContent::Center,
+        "Aliens=",
+        UiAliensRemaining,
+        asset_server,
+    );
 }
 
 fn spawn_text(
     mut commands: Commands,
-    style: Style,
+    justify_content: JustifyContent,
     text: impl ToString,
     component: impl Component,
-    font: Handle<Font>,
+    asset_server: Res<AssetServer>,
 ) {
+    let style = Style {
+        width: Val::Percent(100.0),
+        height: Val::Percent(100.0),
+        justify_content,
+        align_items: AlignItems::End,
+        padding: UiRect::all(Val::Px(5.0)),
+        ..default()
+    };
+    let font = asset_server.load("fonts/font.ttf");
     commands
         .spawn((NodeBundle { style, ..default() }, OnGameScreen))
         .with_children(|parent| {

@@ -6,8 +6,7 @@ pub const PLAYER_SIZE: Vec2 = Vec2::new(60.0, 30.0);
 pub const PLAYER_SPEED: f32 = 300.0;
 
 pub const NUM_SHELTERS: usize = 4;
-pub const SHELTER_SIZE: Vec2 = Vec2::new(40.0, 20.0);
-pub const SHELTER_SCALE_FACTOR: f32 = 2.5;
+pub const SHELTER_SIZE: Vec2 = Vec2::new(100.0, 50.0);
 pub const INITIAL_ARMOR_VALUE: u32 = 100;
 
 pub const ALIENS_PER_LINE: usize = 11;

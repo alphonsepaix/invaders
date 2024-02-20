@@ -16,7 +16,7 @@ pub fn spawn_floor(mut commands: Commands) {
     commands.spawn((
         SpriteBundle {
             sprite: Sprite {
-                color: Color::WHITE,
+                color: Color::DARK_GRAY,
                 ..default()
             },
             transform: Transform {

@@ -51,7 +51,7 @@ pub fn despawn_lasers(
 pub fn handle_laser_explosion(
     mut commands: Commands,
     mut laser_explosion_event_reader: EventReader<LaserExplosion>,
-    lasers_query: Query<(&Transform, &Laser)>,
+    lasers_query: Query<&Transform, With<Laser>>,
     mut explosions_query: Query<
         (
             Entity,
@@ -67,20 +67,12 @@ pub fn handle_laser_explosion(
 ) {
     for laser in laser_explosion_event_reader.read() {
         let laser_entity = laser.0;
-        if let Ok((transform, Laser { direction, .. })) = lasers_query.get(laser_entity) {
-            // Show an explosion.
-            let mut translation = transform.translation;
-            let half_laser_height = LASER_SIZE.y / 2.0;
-            translation.y += match direction {
-                EntityDirection::Up => half_laser_height,
-                EntityDirection::Down => -half_laser_height,
-                other => panic!("Laser should only go up and down, got {:?}", other),
-            };
+        if let Ok(transform) = lasers_query.get(laser_entity) {
             commands.spawn((
                 MaterialMesh2dBundle {
                     mesh: meshes.add(Circle::default().into()).into(),
                     material: materials.add(ColorMaterial::from(Color::RED)),
-                    transform: Transform::from_translation(translation)
+                    transform: Transform::from_translation(transform.translation)
                         .with_scale(Vec2::splat(LASER_SIZE.y).extend(0.0)),
                     ..default()
                 },
