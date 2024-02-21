@@ -11,7 +11,9 @@ use bevy::audio::{PlaybackMode, Volume, VolumeLevel};
 use bevy::core::FrameCount;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
+use bevy::winit::WinitWindows;
 use std::time::Duration;
+use winit::window::Icon;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 pub enum AppState {
@@ -85,6 +87,23 @@ pub fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
     });
 
     commands.insert_resource(LivesRemaining(3));
+}
+
+pub fn set_window_icon(windows: NonSend<WinitWindows>) {
+    let (icon_rgba, icon_width, icon_height) = {
+        let image = image::open("icon.png")
+            .expect("Failed to open icon path")
+            .into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+    let icon = Icon::from_rgba(icon_rgba, icon_width, icon_height).unwrap();
+
+    // do it for all windows
+    for window in windows.windows.values() {
+        window.set_window_icon(Some(icon.clone()));
+    }
 }
 
 pub fn play_main_music(
