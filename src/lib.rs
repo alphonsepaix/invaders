@@ -68,6 +68,7 @@ pub fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
     )));
 
     commands.insert_resource(PlayerScore(0));
+    commands.insert_resource(BestScore(0));
 
     commands.insert_resource(AlienTimer(Timer::from_seconds(
         ALIEN_TICK_DURATION,

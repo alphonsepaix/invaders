@@ -35,6 +35,9 @@ pub struct TransitionTimer(pub Timer);
 pub struct PlayerScore(pub u32);
 
 #[derive(Resource)]
+pub struct BestScore(pub u32);
+
+#[derive(Resource)]
 pub struct ShootSound(pub Handle<AudioSource>);
 
 #[derive(Resource)]

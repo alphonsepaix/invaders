@@ -1,9 +1,7 @@
 use crate::game::GameState;
+use crate::resources::*;
 use crate::resources::{AlreadyPlayed, ButtonHoveredSound, ButtonPressedSound};
-use crate::settings::{
-    BUTTON_HEIGHT, BUTTON_MARGIN, BUTTON_WIDTH, HOVERED_BUTTON, HOVERED_PRESSED_BUTTON,
-    MENU_TEXT_COLOR, MENU_TITLE_SIZE, NORMAL_BUTTON, PRESSED_BUTTON, TEXT_BUTTON_SIZE,
-};
+use crate::settings::*;
 use crate::ui::menu::*;
 use crate::AppState;
 use bevy::app::AppExit;
@@ -13,6 +11,8 @@ pub fn menu_setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     already_played: Res<AlreadyPlayed>,
+    player_score: Res<PlayerScore>,
+    best_score: Res<BestScore>,
 ) {
     let button_style = Style {
         width: Val::Px(BUTTON_WIDTH),
@@ -101,6 +101,24 @@ pub fn menu_setup(
                                 button_text_style,
                             ));
                         });
+
+                    if already_played.0 {
+                        parent.spawn(
+                            TextBundle::from_section(
+                                format!("Score: {} / Best score: {}", player_score.0, best_score.0)
+                                    .to_uppercase(),
+                                TextStyle {
+                                    font_size: 20.0,
+                                    color: MENU_TEXT_COLOR,
+                                    font: asset_server.load("fonts/font.ttf"),
+                                },
+                            )
+                            .with_style(Style {
+                                margin: UiRect::all(Val::Px(50.0)),
+                                ..default()
+                            }),
+                        );
+                    }
                 });
         });
 }

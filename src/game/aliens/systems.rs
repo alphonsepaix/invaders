@@ -243,7 +243,6 @@ pub fn handle_alien_hit(
                     lives_remaining.0 += 1;
                     // 10% speed increase.
                     let duration = alien_timer_duration.0.as_secs_f32() * 0.90;
-                    info!("Setting new alien timer duration: {duration}");
                     alien_timer_duration.0 = Duration::from_secs_f32(duration);
                 }
             } else if aliens_remaining < 25 {

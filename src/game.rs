@@ -52,7 +52,7 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AppState::InGame), spawn_floor)
+        app.add_systems(OnEnter(AppState::InGame), (reset_game_state, spawn_floor))
             .add_plugins(PlayerPlugin)
             .add_plugins(AliensPlugin)
             .add_plugins(LasersPlugin)
@@ -66,9 +66,6 @@ impl Plugin for GamePlugin {
                     .run_if(in_state(AppState::InGame))
                     .run_if(in_state(GameState::Running)),
             )
-            .add_systems(
-                OnExit(AppState::InGame),
-                (despawn_screen::<OnGameScreen>, reset_game_state),
-            );
+            .add_systems(OnExit(AppState::InGame), despawn_screen::<OnGameScreen>);
     }
 }

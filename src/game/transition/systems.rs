@@ -3,7 +3,7 @@ use crate::game::lasers::Laser;
 use crate::game::player::Player;
 use crate::game::transition::TransitionState;
 use crate::game::GameState;
-use crate::resources::{LivesRemaining, TransitionTimer};
+use crate::resources::{BestScore, LivesRemaining, PlayerScore, TransitionTimer};
 use crate::AppState;
 use bevy::prelude::*;
 
@@ -25,10 +25,12 @@ pub fn transition_setup(
 pub fn set_transition_state(
     aliens_query: Query<&Alien, (Without<Laser>, Without<Ufo>)>,
     player_query: Query<&Player, Without<Laser>>,
-    time: Res<Time>,
     remaining_lives: Res<LivesRemaining>,
+    score: Res<PlayerScore>,
+    time: Res<Time>,
     mut next_app_state: ResMut<NextState<AppState>>,
     mut next_game_state: ResMut<NextState<GameState>>,
+    mut best_score: ResMut<BestScore>,
     mut next_transition_state: ResMut<NextState<TransitionState>>,
     mut timer: ResMut<TransitionTimer>,
 ) {
@@ -49,6 +51,9 @@ pub fn set_transition_state(
         if resume_game {
             next_game_state.set(GameState::Running);
         } else {
+            if score.0 > best_score.0 {
+                best_score.0 = score.0;
+            }
             next_app_state.set(AppState::Menu);
         }
     }
