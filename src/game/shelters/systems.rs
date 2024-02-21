@@ -82,7 +82,7 @@ pub fn shelter_hit(
                 <= SHELTER_SIZE.x / 2.0 + LASER_SIZE.x / 2.0
             {
                 laser_explosion_event_writer.send(LaserExplosion(laser_entity));
-                shelter.armor = shelter.armor.saturating_sub(5);
+                shelter.armor = shelter.armor.saturating_sub(LASER_DAMAGE);
 
                 // Retrieve the armor text corresponding to this shelter.
                 let (mut text, _) = armor_texts_query

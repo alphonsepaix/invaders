@@ -108,13 +108,13 @@ pub fn menu_setup(
                                 format!("Score: {} / Best score: {}", player_score.0, best_score.0)
                                     .to_uppercase(),
                                 TextStyle {
-                                    font_size: 20.0,
+                                    font_size: SCORE_MENU_TEXT_SIZE,
                                     color: MENU_TEXT_COLOR,
                                     font: asset_server.load("fonts/font.ttf"),
                                 },
                             )
                             .with_style(Style {
-                                margin: UiRect::all(Val::Px(50.0)),
+                                margin: UiRect::all(Val::Px(30.0)),
                                 ..default()
                             }),
                         );

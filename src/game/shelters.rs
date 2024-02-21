@@ -19,7 +19,7 @@ impl Plugin for SheltersPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AppState::InGame), spawn_shelters)
             .add_systems(
-                Update,
+                FixedUpdate,
                 shelter_hit
                     .run_if(in_state(AppState::InGame))
                     .run_if(in_state(GameState::Running)),
