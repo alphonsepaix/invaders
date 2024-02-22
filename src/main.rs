@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use bevy::prelude::*;
 use bevy::window::close_on_esc;
 use invaders::game::systems::*;

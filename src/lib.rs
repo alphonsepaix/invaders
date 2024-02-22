@@ -91,7 +91,7 @@ pub fn add_resources(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 pub fn set_window_icon(windows: NonSend<WinitWindows>) {
     let (icon_rgba, icon_width, icon_height) = {
-        let image = image::open("icon.png")
+        let image = image::open("assets/icon.png")
             .expect("Failed to open icon path")
             .into_rgba8();
         let (width, height) = image.dimensions();
