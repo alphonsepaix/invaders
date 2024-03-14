@@ -6,6 +6,10 @@ A Space Invaders-like game written with the Bevy engine.
 
 ![Gameplay](gameplay.gif)
 
+## Controls
+
+Use the arrow keys (`←`, `→`) to move around. Press `␣` to fire. Press `p` to pause/unpause the game and `Esc` or `q` to exit.
+
 ## Licenses
 
 ### Code
@@ -14,7 +18,7 @@ The code in this repository is licensed under the [MIT License](LICENSE).
 
 ### Images
 
-The [window icon](assets/icon.png) is a modified variant
+The [window icon](assets/icon.png) is a modified version
 of [this one](https://www.hiclipart.com/free-transparent-background-png-clipart-qqtdq) and is available for
 non-commercial purposes.
 
